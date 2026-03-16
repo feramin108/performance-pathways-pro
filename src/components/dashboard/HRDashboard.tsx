@@ -1,20 +1,20 @@
 import { motion } from 'framer-motion';
-import { useEvaluationStore } from '@/store/evaluationStore';
+import { useAllEvaluations } from '@/hooks/useSupabaseQueries';
 import { BarChart3, CheckCircle, Clock, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StatusBadge } from '../evaluation/StatusBadge';
 import { ScoreDisplay } from '../evaluation/ScoreDisplay';
 import { stagger, fadeIn } from '@/lib/animations';
+import { EvaluationStatus } from '@/types/evaluation';
 
 export function HRDashboard() {
-  const { evaluations } = useEvaluationStore();
+  const { data: evaluations = [] } = useAllEvaluations();
   const navigate = useNavigate();
 
   const total = evaluations.length;
   const submitted = evaluations.filter(e => e.status !== 'draft').length;
   const validated = evaluations.filter(e => e.status === 'validated').length;
   const pending = evaluations.filter(e => e.status === 'approved').length;
-
   const completionRate = total > 0 ? Math.round((submitted / total) * 100) : 0;
 
   return (
@@ -41,7 +41,6 @@ export function HRDashboard() {
         ))}
       </motion.div>
 
-      {/* Completion Bar */}
       <motion.div variants={fadeIn} className="mb-6 surface-card p-4">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-xs font-medium text-muted-foreground">Cycle Completion</span>
@@ -70,11 +69,11 @@ export function HRDashboard() {
             <tbody>
               {evaluations.map(ev => (
                 <tr key={ev.id} className="border-b border-border last:border-0 transition-mechanical hover:bg-secondary/30">
-                  <td className="px-4 py-3 text-sm font-medium">{ev.employeeName}</td>
+                  <td className="px-4 py-3 text-sm font-medium">{ev.employee_name}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{ev.department}</td>
-                  <td className="px-4 py-3 text-data text-sm">{ev.evaluationYear}</td>
-                  <td className="px-4 py-3"><StatusBadge status={ev.status} /></td>
-                  <td className="px-4 py-3"><ScoreDisplay score={ev.totalScore} /></td>
+                  <td className="px-4 py-3 text-data text-sm">{ev.evaluation_year}</td>
+                  <td className="px-4 py-3"><StatusBadge status={ev.status as EvaluationStatus} /></td>
+                  <td className="px-4 py-3"><ScoreDisplay score={ev.total_score} /></td>
                   <td className="px-4 py-3 text-sm">{ev.classification}</td>
                   <td className="px-4 py-3">
                     <button
@@ -86,6 +85,13 @@ export function HRDashboard() {
                   </td>
                 </tr>
               ))}
+              {evaluations.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    No evaluations found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

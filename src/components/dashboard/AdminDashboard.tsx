@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
-import { useEvaluationStore } from '@/store/evaluationStore';
+import { useAllEvaluations, useAuditLogs } from '@/hooks/useSupabaseQueries';
 import { Settings, Shield, Users, BarChart3 } from 'lucide-react';
 import { stagger, fadeIn } from '@/lib/animations';
 
 export function AdminDashboard() {
-  const { evaluations, auditLog } = useEvaluationStore();
+  const { data: evaluations = [] } = useAllEvaluations();
+  const { data: auditLog = [] } = useAuditLogs();
 
   return (
     <motion.div initial="hidden" animate="visible" variants={stagger}>
@@ -17,7 +18,7 @@ export function AdminDashboard() {
         {[
           { label: 'Total Evaluations', value: evaluations.length, icon: BarChart3 },
           { label: 'Audit Entries', value: auditLog.length, icon: Shield },
-          { label: 'Active Users', value: 4, icon: Users },
+          { label: 'Active Users', value: '—', icon: Users },
           { label: 'KPI Templates', value: 8, icon: Settings },
         ].map(stat => (
           <div key={stat.label} className="surface-card p-4">
@@ -30,7 +31,6 @@ export function AdminDashboard() {
         ))}
       </motion.div>
 
-      {/* Recent Audit Log */}
       <motion.div variants={fadeIn}>
         <h2 className="mb-3 text-sm font-semibold">Recent Audit Log</h2>
         <div className="surface-card overflow-hidden">
@@ -49,19 +49,26 @@ export function AdminDashboard() {
               {auditLog.map(entry => (
                 <tr key={entry.id} className="border-b border-border last:border-0 transition-mechanical hover:bg-secondary/30">
                   <td className="px-4 py-3 text-data text-xs text-muted-foreground">
-                    {new Date(entry.timestamp).toLocaleString()}
+                    {new Date(entry.created_at).toLocaleString()}
                   </td>
                   <td className="px-4 py-3 text-sm font-medium">{entry.action}</td>
-                  <td className="px-4 py-3 text-sm">{entry.performedBy}</td>
+                  <td className="px-4 py-3 text-sm">{entry.performed_by_name}</td>
                   <td className="px-4 py-3">
                     <span className="rounded-sm bg-secondary px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground">
-                      {entry.performedByRole}
+                      {entry.performed_by_role}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{entry.details}</td>
-                  <td className="px-4 py-3 text-data text-xs text-muted-foreground">{entry.ipAddress}</td>
+                  <td className="px-4 py-3 text-data text-xs text-muted-foreground">{entry.ip_address}</td>
                 </tr>
               ))}
+              {auditLog.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    No audit entries yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
