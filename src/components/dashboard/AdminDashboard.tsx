@@ -1,9 +1,7 @@
 import { motion } from 'framer-motion';
 import { useEvaluationStore } from '@/store/evaluationStore';
 import { Settings, Shield, Users, BarChart3 } from 'lucide-react';
-
-const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.05 } } };
-const fadeIn = { hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0, transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] } } };
+import { stagger, fadeIn } from '@/lib/animations';
 
 export function AdminDashboard() {
   const { evaluations, auditLog } = useEvaluationStore();

@@ -5,9 +5,7 @@ import { FileText, Clock, CheckCircle, AlertCircle, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StatusBadge } from '../evaluation/StatusBadge';
 import { ScoreDisplay } from '../evaluation/ScoreDisplay';
-
-const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.05 } } };
-const fadeIn = { hidden: { opacity: 0, y: 4 }, visible: { opacity: 1, y: 0, transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] } } };
+import { stagger, fadeIn } from '@/lib/animations';
 
 export function EmployeeDashboard() {
   const { currentUser } = useAuthStore();
