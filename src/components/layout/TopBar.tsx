@@ -1,21 +1,18 @@
-import { useAuthStore } from '@/store/authStore';
-import { useEvaluationStore } from '@/store/evaluationStore';
+import { useProfile, useNotifications } from '@/hooks/useSupabaseQueries';
+import { supabase } from '@/integrations/supabase/client';
 import { Bell, LogOut, UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { UserRole } from '@/types/evaluation';
-
-const ROLE_OPTIONS: { role: UserRole; label: string }[] = [
-  { role: 'employee', label: 'Employee' },
-  { role: 'manager', label: 'Manager' },
-  { role: 'hr', label: 'HR' },
-  { role: 'admin', label: 'Admin' },
-];
 
 export function TopBar() {
-  const { currentUser, logout, switchRole } = useAuthStore();
-  const { notifications } = useEvaluationStore();
+  const { data: profile } = useProfile();
+  const { data: notifications } = useNotifications();
   const navigate = useNavigate();
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications?.filter(n => !n.read).length || 0;
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-card px-6">
@@ -25,22 +22,12 @@ export function TopBar() {
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Role Switcher (Demo) */}
-        <div className="flex items-center gap-1 rounded-sm border border-border p-0.5">
-          {ROLE_OPTIONS.map(opt => (
-            <button
-              key={opt.role}
-              onClick={() => switchRole(opt.role)}
-              className={`rounded-sm px-2 py-1 text-[10px] font-medium transition-mechanical ${
-                currentUser?.role === opt.role
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        {/* Role display */}
+        {profile?.primaryRole && (
+          <span className="rounded-sm bg-primary px-2 py-1 text-[10px] font-medium text-primary-foreground capitalize">
+            {profile.primaryRole}
+          </span>
+        )}
 
         {/* Notifications */}
         <button className="relative flex h-8 w-8 items-center justify-center rounded-sm transition-mechanical hover:bg-secondary">
@@ -55,9 +42,9 @@ export function TopBar() {
         {/* User */}
         <div className="flex items-center gap-2 border-l border-border pl-2">
           <UserCircle className="h-4 w-4 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">{currentUser?.fullName}</span>
+          <span className="text-xs text-muted-foreground">{profile?.full_name || profile?.email}</span>
           <button
-            onClick={() => { logout(); navigate('/login'); }}
+            onClick={handleLogout}
             className="flex h-8 w-8 items-center justify-center rounded-sm transition-mechanical hover:bg-secondary"
             title="Logout"
           >

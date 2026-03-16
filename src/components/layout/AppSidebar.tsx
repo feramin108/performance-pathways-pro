@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/store/authStore';
+import { useProfile } from '@/hooks/useSupabaseQueries';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -31,13 +31,12 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export function AppSidebar() {
-  const { currentUser } = useAuthStore();
+  const { data: profile } = useProfile();
   const location = useLocation();
   const navigate = useNavigate();
 
-  if (!currentUser) return null;
-
-  const filteredItems = NAV_ITEMS.filter(item => item.roles.includes(currentUser.role));
+  const userRole = profile?.primaryRole || 'employee';
+  const filteredItems = NAV_ITEMS.filter(item => item.roles.includes(userRole));
 
   return (
     <aside className="flex w-60 flex-col border-r border-border bg-sidebar">
@@ -79,11 +78,11 @@ export function AppSidebar() {
       <div className="border-t border-sidebar-border p-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-secondary text-xs font-semibold text-secondary-foreground">
-            {currentUser.fullName.split(' ').map(n => n[0]).join('')}
+            {(profile?.full_name || 'U').split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-sidebar-foreground">{currentUser.fullName}</p>
-            <p className="truncate text-[10px] text-muted-foreground capitalize">{currentUser.role}</p>
+            <p className="truncate text-xs font-medium text-sidebar-foreground">{profile?.full_name || 'User'}</p>
+            <p className="truncate text-[10px] text-muted-foreground capitalize">{userRole}</p>
           </div>
         </div>
       </div>

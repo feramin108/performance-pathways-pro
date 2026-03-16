@@ -1,34 +1,59 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/store/authStore';
+import { supabase } from '@/integrations/supabase/client';
 import { Shield, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const DEMO_ACCOUNTS = [
-  { email: 'sarah.chen@bank.com', role: 'Employee', name: 'Sarah Chen' },
-  { email: 'james.okafor@bank.com', role: 'Manager', name: 'James Okafor' },
-  { email: 'amina.bello@bank.com', role: 'HR', name: 'Amina Bello' },
-  { email: 'admin@bank.com', role: 'Admin', name: 'Admin User' },
-];
-
 export default function LoginPage() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
-  const { login } = useAuthStore();
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (login(email)) {
-      navigate('/dashboard');
-    } else {
-      setError('Invalid credentials. Use a demo account below.');
-    }
-  };
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        navigate('/dashboard');
+      }
+    });
 
-  const handleDemoLogin = (demoEmail: string) => {
-    if (login(demoEmail)) {
-      navigate('/dashboard');
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) navigate('/dashboard');
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      if (isSignUp) {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: fullName },
+            emailRedirectTo: window.location.origin,
+          },
+        });
+        if (signUpError) throw signUpError;
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (signInError) throw signInError;
+      }
+    } catch (err: any) {
+      setError(err.message || 'Authentication failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,7 +62,7 @@ export default function LoginPage() {
       <motion.div
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         className="w-full max-w-sm"
       >
         {/* Header */}
@@ -56,12 +81,27 @@ export default function LoginPage() {
         {/* Login Form */}
         <div className="surface-card p-6">
           <p className="mb-4 text-xs text-muted-foreground">
-            Sign in with your Active Directory credentials
+            {isSignUp ? 'Create your account' : 'Sign in to your account'}
           </p>
-          <form onSubmit={handleLogin} className="space-y-3">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {isSignUp && (
+              <div>
+                <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={e => setFullName(e.target.value)}
+                  placeholder="John Doe"
+                  className="input-inset w-full"
+                  required={isSignUp}
+                />
+              </div>
+            )}
             <div>
               <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                Corporate Email
+                Email
               </label>
               <input
                 type="email"
@@ -78,50 +118,36 @@ export default function LoginPage() {
               </label>
               <input
                 type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
                 className="input-inset w-full"
-                defaultValue="password"
+                required
               />
             </div>
 
             {error && (
               <div className="flex items-center gap-2 rounded-sm bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                <AlertCircle className="h-3 w-3" />
+                <AlertCircle className="h-3 w-3 flex-shrink-0" />
                 {error}
               </div>
             )}
 
             <button
               type="submit"
-              className="w-full rounded-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-mechanical hover:bg-primary/90"
+              disabled={loading}
+              className="w-full rounded-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-mechanical hover:bg-primary/90 disabled:opacity-50"
             >
-              Sign In via Active Directory
+              {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
             </button>
           </form>
-        </div>
 
-        {/* Demo Accounts */}
-        <div className="mt-4 surface-card p-4">
-          <p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Demo Accounts
-          </p>
-          <div className="space-y-1.5">
-            {DEMO_ACCOUNTS.map(account => (
-              <button
-                key={account.email}
-                onClick={() => handleDemoLogin(account.email)}
-                className="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left transition-mechanical hover:bg-secondary"
-              >
-                <div>
-                  <p className="text-xs font-medium text-foreground">{account.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{account.email}</p>
-                </div>
-                <span className="rounded-sm bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  {account.role}
-                </span>
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
+            className="mt-3 w-full text-center text-xs text-muted-foreground transition-mechanical hover:text-foreground"
+          >
+            {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+          </button>
         </div>
 
         <p className="mt-4 text-center text-[10px] text-muted-foreground">
