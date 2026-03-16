@@ -1,13 +1,14 @@
 import { motion } from 'framer-motion';
-import { useEvaluationStore } from '@/store/evaluationStore';
+import { useAllEvaluations } from '@/hooks/useSupabaseQueries';
 import { Users, Clock, CheckCircle, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StatusBadge } from '../evaluation/StatusBadge';
 import { ScoreDisplay } from '../evaluation/ScoreDisplay';
 import { stagger, fadeIn } from '@/lib/animations';
+import { EvaluationStatus } from '@/types/evaluation';
 
 export function ManagerDashboard() {
-  const { evaluations } = useEvaluationStore();
+  const { data: evaluations = [] } = useAllEvaluations();
   const navigate = useNavigate();
 
   const pendingReviews = evaluations.filter(e => e.status === 'submitted');
@@ -56,11 +57,11 @@ export function ManagerDashboard() {
             <tbody>
               {evaluations.filter(e => e.status !== 'draft').map(ev => (
                 <tr key={ev.id} className="border-b border-border last:border-0 transition-mechanical hover:bg-secondary/30">
-                  <td className="px-4 py-3 text-sm font-medium">{ev.employeeName}</td>
+                  <td className="px-4 py-3 text-sm font-medium">{ev.employee_name}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{ev.department}</td>
-                  <td className="px-4 py-3 text-data text-sm">{ev.evaluationYear}</td>
-                  <td className="px-4 py-3"><StatusBadge status={ev.status} /></td>
-                  <td className="px-4 py-3"><ScoreDisplay score={ev.totalScore} /></td>
+                  <td className="px-4 py-3 text-data text-sm">{ev.evaluation_year}</td>
+                  <td className="px-4 py-3"><StatusBadge status={ev.status as EvaluationStatus} /></td>
+                  <td className="px-4 py-3"><ScoreDisplay score={ev.total_score} /></td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => navigate(`/evaluation/${ev.id}`)}
@@ -71,6 +72,13 @@ export function ManagerDashboard() {
                   </td>
                 </tr>
               ))}
+              {evaluations.filter(e => e.status !== 'draft').length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    No evaluations to review.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
