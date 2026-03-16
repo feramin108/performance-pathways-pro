@@ -14,16 +14,335 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: string
+          evaluation_id: string | null
+          id: string
+          ip_address: string
+          performed_by: string | null
+          performed_by_name: string
+          performed_by_role: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: string
+          evaluation_id?: string | null
+          id?: string
+          ip_address?: string
+          performed_by?: string | null
+          performed_by_name?: string
+          performed_by_role?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string
+          evaluation_id?: string | null
+          id?: string
+          ip_address?: string
+          performed_by?: string | null
+          performed_by_name?: string
+          performed_by_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluation_cycles: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          start_date: string | null
+          status: string
+          title: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          start_date?: string | null
+          status?: string
+          title: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          start_date?: string | null
+          status?: string
+          title?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      evaluations: {
+        Row: {
+          approved_at: string | null
+          areas_for_improvement: string
+          career_path_preferences: string
+          classification: string
+          created_at: string
+          cycle_id: string | null
+          department: string
+          employee_comments: string
+          employee_id: string
+          employee_name: string
+          evaluation_year: number
+          hr_remarks: string
+          id: string
+          is_sales_staff: boolean
+          job_title: string
+          longevity: string
+          manager_remarks: string
+          marital_status: string
+          proposed_action_plan: string
+          qualification: string
+          status: string
+          submitted_at: string | null
+          total_score: number
+          training_needs: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          areas_for_improvement?: string
+          career_path_preferences?: string
+          classification?: string
+          created_at?: string
+          cycle_id?: string | null
+          department?: string
+          employee_comments?: string
+          employee_id: string
+          employee_name?: string
+          evaluation_year: number
+          hr_remarks?: string
+          id?: string
+          is_sales_staff?: boolean
+          job_title?: string
+          longevity?: string
+          manager_remarks?: string
+          marital_status?: string
+          proposed_action_plan?: string
+          qualification?: string
+          status?: string
+          submitted_at?: string | null
+          total_score?: number
+          training_needs?: string
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          areas_for_improvement?: string
+          career_path_preferences?: string
+          classification?: string
+          created_at?: string
+          cycle_id?: string | null
+          department?: string
+          employee_comments?: string
+          employee_id?: string
+          employee_name?: string
+          evaluation_year?: number
+          hr_remarks?: string
+          id?: string
+          is_sales_staff?: boolean
+          job_title?: string
+          longevity?: string
+          manager_remarks?: string
+          marital_status?: string
+          proposed_action_plan?: string
+          qualification?: string
+          status?: string
+          submitted_at?: string | null
+          total_score?: number
+          training_needs?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluations_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "evaluation_cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kpi_entries: {
+        Row: {
+          category: string
+          comment: string
+          created_at: string
+          evaluation_id: string
+          id: string
+          rating: number
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          category: string
+          comment?: string
+          created_at?: string
+          evaluation_id: string
+          id?: string
+          rating?: number
+          sort_order?: number
+          title?: string
+        }
+        Update: {
+          category?: string
+          comment?: string
+          created_at?: string
+          evaluation_id?: string
+          id?: string
+          rating?: number
+          sort_order?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_entries_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          department: string
+          email: string
+          full_name: string
+          id: string
+          job_title: string
+          longevity: string
+          manager_id: string | null
+          manager_name: string
+          marital_status: string
+          qualification: string
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string
+          email?: string
+          full_name?: string
+          id?: string
+          job_title?: string
+          longevity?: string
+          manager_id?: string | null
+          manager_name?: string
+          marital_status?: string
+          qualification?: string
+          unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          email?: string
+          full_name?: string
+          id?: string
+          job_title?: string
+          longevity?: string
+          manager_id?: string | null
+          manager_name?: string
+          marital_status?: string
+          qualification?: string
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "employee" | "manager" | "hr" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +469,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["employee", "manager", "hr", "admin"],
+    },
   },
 } as const
