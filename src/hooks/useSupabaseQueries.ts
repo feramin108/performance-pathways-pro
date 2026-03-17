@@ -223,7 +223,6 @@ export function useUpdateEvaluationStatus() {
 
       if (error) throw error;
 
-      // Get profile and role
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name')
@@ -268,6 +267,190 @@ export function useMarkNotificationRead() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+}
+
+// ===================== DEPARTMENT QUERIES =====================
+
+export function useDepartments() {
+  return useQuery({
+    queryKey: ['departments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('*')
+        .order('name');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
+export function useCreateDepartment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const { data, error } = await supabase
+        .from('departments')
+        .insert({ name } as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+    },
+  });
+}
+
+export function useToggleDepartment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase
+        .from('departments')
+        .update({ is_active } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+    },
+  });
+}
+
+// ===================== DEPARTMENT KPI QUERIES =====================
+
+export function useDepartmentKPIs(departmentId: string) {
+  return useQuery({
+    queryKey: ['department-kpis', departmentId],
+    enabled: !!departmentId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('department_kpis')
+        .select('*')
+        .eq('department_id', departmentId)
+        .order('category')
+        .order('sort_order');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
+export function useCreateDepartmentKPI() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (kpi: {
+      department_id: string;
+      name: string;
+      category: string;
+      weight: number;
+      max_rating: number;
+      sort_order: number;
+    }) => {
+      const { data, error } = await supabase
+        .from('department_kpis')
+        .insert(kpi as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['department-kpis', variables.department_id] });
+    },
+  });
+}
+
+export function useToggleDepartmentKPI() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase
+        .from('department_kpis')
+        .update({ is_active } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['department-kpis'] });
+    },
+  });
+}
+
+// ===================== DEPARTMENT MANAGER QUERIES =====================
+
+export function useDepartmentManagers() {
+  return useQuery({
+    queryKey: ['department-managers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('department_managers')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
+export function useManagerProfiles() {
+  return useQuery({
+    queryKey: ['manager-profiles'],
+    queryFn: async () => {
+      // Get users with manager role
+      const { data: managerRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'manager');
+      if (rolesError) throw rolesError;
+
+      if (!managerRoles || managerRoles.length === 0) return [];
+
+      const managerIds = managerRoles.map(r => r.user_id);
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, email')
+        .in('user_id', managerIds);
+      if (error) throw error;
+      return profiles || [];
+    },
+  });
+}
+
+export function useAssignManager() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (assignment: { department_id: string; manager_user_id: string }) => {
+      const { data, error } = await supabase
+        .from('department_managers')
+        .insert(assignment as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['department-managers'] });
+    },
+  });
+}
+
+export function useRemoveManager() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('department_managers')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['department-managers'] });
     },
   });
 }
