@@ -63,6 +63,16 @@ const App = () => (
 
             {/* HC Portal */}
             <Route path="/hc/dashboard" element={<ProtectedRoute allowedRole="hc"><HCDashboard /></ProtectedRoute>} />
+            <Route path="/hc/pending" element={<ProtectedRoute allowedRole="hc"><HCPendingValidation /></ProtectedRoute>} />
+            <Route path="/hc/evaluation/:id" element={<ProtectedRoute allowedRole="hc"><HCEvaluationValidation /></ProtectedRoute>} />
+            <Route path="/hc/evaluations" element={<ProtectedRoute allowedRole="hc"><HCAllEvaluations /></ProtectedRoute>} />
+            <Route path="/hc/calibration" element={<ProtectedRoute allowedRole="hc"><HCCalibration /></ProtectedRoute>} />
+            <Route path="/hc/employees" element={<ProtectedRoute allowedRole="hc"><HCEmployeeDirectory /></ProtectedRoute>} />
+            <Route path="/hc/kpis" element={<ProtectedRoute allowedRole="hc"><HCKPIManagement /></ProtectedRoute>} />
+            <Route path="/hc/cycles" element={<ProtectedRoute allowedRole="hc"><HCCycles /></ProtectedRoute>} />
+            <Route path="/hc/reports" element={<ProtectedRoute allowedRole="hc"><HCReports /></ProtectedRoute>} />
+            <Route path="/hc/audit" element={<ProtectedRoute allowedRole="hc"><HCAuditLog /></ProtectedRoute>} />
+            <Route path="/hc/notifications" element={<ProtectedRoute allowedRole="hc"><HCNotifications /></ProtectedRoute>} />
             <Route path="/hc/*" element={<ProtectedRoute allowedRole="hc"><ComingSoon /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
