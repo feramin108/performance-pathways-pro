@@ -79,9 +79,25 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  ::-webkit-scrollbar { @apply w-1.5; }
-  ::-webkit-scrollbar-track { @apply bg-transparent; }
-  ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: hsl(var(--background)); }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(215 16% 47%); }
+
+  ::selection {
+    background: hsl(214 52% 25%);
+    color: hsl(213 94% 78%);
+  }
+
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px hsl(var(--card)) inset !important;
+    -webkit-text-fill-color: hsl(var(--foreground)) !important;
+  }
 }
 
 @layer components {
@@ -122,4 +138,10 @@
   .animate-deadline-pulse {
     animation: deadline-pulse 1.5s ease-in-out infinite;
   }
+}
+
+@media print {
+  aside, header, .fixed, button { display: none !important; }
+  main { padding: 0 !important; margin: 0 !important; }
+  .surface-card { border: 1px solid #ccc !important; box-shadow: none !important; }
 }
