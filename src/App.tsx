@@ -12,6 +12,11 @@ import GoalSettingPage from "./pages/employee/GoalSettingPage";
 import ProfilePage from "./pages/employee/ProfilePage";
 import NotificationsPage from "./pages/employee/NotificationsPage";
 import ManagerDashboard from "./pages/manager/ManagerDashboard";
+import ManagerReview from "./pages/manager/ManagerReview";
+import PendingReviews from "./pages/manager/PendingReviews";
+import TeamEvaluations from "./pages/manager/TeamEvaluations";
+import ApprovedEvaluations from "./pages/manager/ApprovedEvaluations";
+import ManagerNotifications from "./pages/manager/ManagerNotifications";
 import HCDashboard from "./pages/hc/HCDashboard";
 import ComingSoon from "./pages/ComingSoon";
 
@@ -39,6 +44,11 @@ const App = () => (
 
             {/* Manager Portal */}
             <Route path="/manager/dashboard" element={<ProtectedRoute allowedRole="manager"><ManagerDashboard /></ProtectedRoute>} />
+            <Route path="/manager/pending" element={<ProtectedRoute allowedRole="manager"><PendingReviews /></ProtectedRoute>} />
+            <Route path="/manager/review/:id" element={<ProtectedRoute allowedRole="manager"><ManagerReview /></ProtectedRoute>} />
+            <Route path="/manager/team" element={<ProtectedRoute allowedRole="manager"><TeamEvaluations /></ProtectedRoute>} />
+            <Route path="/manager/approved" element={<ProtectedRoute allowedRole="manager"><ApprovedEvaluations /></ProtectedRoute>} />
+            <Route path="/manager/notifications" element={<ProtectedRoute allowedRole="manager"><ManagerNotifications /></ProtectedRoute>} />
             <Route path="/manager/*" element={<ProtectedRoute allowedRole="manager"><ComingSoon /></ProtectedRoute>} />
 
             {/* HC Portal */}

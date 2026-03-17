@@ -26,7 +26,7 @@ export function useManagerEvaluations() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('evaluations')
-        .select('*, employee:profiles!evaluations_employee_id_fkey(full_name, department, branch)')
+        .select('*, employee:profiles!evaluations_employee_id_fkey(id, full_name, department, branch, employee_id, job_title, function_role)')
         .order('created_at', { ascending: false }) as any;
       if (error) throw error;
       return data || [];
