@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Shield, AlertCircle } from 'lucide-react';
+import { Shield, AlertCircle, Users, UserCheck, BarChart3, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+const DEMO_ACCOUNTS = [
+  { label: 'Employee', email: 'employee@demo.com', password: 'demo123456', icon: Users, color: 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20' },
+  { label: 'Line Manager', email: 'manager@demo.com', password: 'demo123456', icon: UserCheck, color: 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20' },
+  { label: 'HR', email: 'hr@demo.com', password: 'demo123456', icon: BarChart3, color: 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20' },
+  { label: 'SuperAdmin', email: 'admin@demo.com', password: 'demo123456', icon: Settings, color: 'bg-primary/10 text-primary hover:bg-primary/20' },
+];
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -55,6 +62,13 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDemoLogin = (demoEmail: string, demoPassword: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setIsSignUp(false);
+    setError('');
   };
 
   return (
@@ -148,6 +162,26 @@ export default function LoginPage() {
           >
             {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
           </button>
+        </div>
+
+        {/* Demo Quick Login */}
+        <div className="mt-4 surface-card p-4">
+          <p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Quick Demo Login</p>
+          <div className="grid grid-cols-2 gap-2">
+            {DEMO_ACCOUNTS.map(demo => (
+              <button
+                key={demo.label}
+                onClick={() => handleDemoLogin(demo.email, demo.password)}
+                className={`flex items-center gap-2 rounded-sm px-3 py-2 text-xs font-medium transition-mechanical ${demo.color}`}
+              >
+                <demo.icon className="h-3.5 w-3.5" />
+                {demo.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-[10px] text-muted-foreground text-center">
+            Click a role above to fill credentials, then press Sign In
+          </p>
         </div>
 
         <p className="mt-4 text-center text-[10px] text-muted-foreground">
