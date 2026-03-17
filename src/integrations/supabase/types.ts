@@ -58,6 +58,103 @@ export type Database = {
           },
         ]
       }
+      department_kpis: {
+        Row: {
+          category: string
+          created_at: string
+          department_id: string
+          id: string
+          is_active: boolean
+          max_rating: number
+          name: string
+          sort_order: number
+          weight: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          department_id: string
+          id?: string
+          is_active?: boolean
+          max_rating?: number
+          name: string
+          sort_order?: number
+          weight?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          department_id?: string
+          id?: string
+          is_active?: boolean
+          max_rating?: number
+          name?: string
+          sort_order?: number
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_kpis_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      department_managers: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          manager_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          manager_user_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          manager_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_managers_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       evaluation_cycles: {
         Row: {
           created_at: string
@@ -255,6 +352,7 @@ export type Database = {
         Row: {
           created_at: string
           department: string
+          department_id: string | null
           email: string
           full_name: string
           id: string
@@ -271,6 +369,7 @@ export type Database = {
         Insert: {
           created_at?: string
           department?: string
+          department_id?: string | null
           email?: string
           full_name?: string
           id?: string
@@ -287,6 +386,7 @@ export type Database = {
         Update: {
           created_at?: string
           department?: string
+          department_id?: string | null
           email?: string
           full_name?: string
           id?: string
@@ -301,6 +401,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_manager_id_fkey"
             columns: ["manager_id"]
