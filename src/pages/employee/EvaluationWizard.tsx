@@ -216,11 +216,11 @@ export default function EvaluationWizard() {
     triggerAutoSave();
   };
 
-  const addCustomKPI = (category: string, max: number) => {
+  const addKPI = (category: string, max: number, title = '') => {
     const current = kpis.filter(k => k.category === category);
     if (current.length >= max) return;
     setKpis(prev => [...prev, {
-      template_id: null, goal_id: null, category, title: '',
+      template_id: null, goal_id: null, category, title,
       isCustom: true, employee_rating: null, employee_comment: '',
       sort_order: current.length,
     }]);
