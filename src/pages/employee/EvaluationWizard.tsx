@@ -530,7 +530,7 @@ export default function EvaluationWizard() {
           );
         })}
         {catKpis.length < max && (
-          <button type="button" onClick={() => addCustomKPI(category, max)}
+          <button type="button" onClick={() => addKPI(category, max)}
             className="text-sm text-primary hover:underline mb-4">+ Add Custom KPI</button>
         )}
         <ScoreBox label={scoreLabel[category] || ''} scoreOn100={catScore.scoreOn100} weightLabel={weightLabel} weighted={catScore.weighted} />
