@@ -7,6 +7,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateScores, getClassificationBg, computeScoreHash, type KPIEntry as KPIEntryType } from '@/lib/scoreEngine';
+import { generateEvaluationPDF } from '@/lib/pdfExport';
 import { AlertTriangle, Download, Edit, ChevronRight, Shield } from 'lucide-react';
 
 interface EvalData {
