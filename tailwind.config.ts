@@ -8,9 +8,7 @@ export default {
     container: {
       center: true,
       padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
+      screens: { "2xl": "1400px" },
     },
     extend: {
       colors: {
@@ -59,13 +57,18 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        bank: {
-          900: "hsl(0, 0%, 9%)",
-          800: "hsl(0, 0%, 12%)",
-          700: "hsl(0, 0%, 16%)",
-          600: "hsl(0, 0%, 20%)",
-          500: "hsl(0, 72%, 51%)",
-          400: "hsl(0, 72%, 61%)",
+        portal: {
+          employee: "hsl(var(--portal-employee))",
+          manager: "hsl(var(--portal-manager))",
+          hc: "hsl(var(--portal-hc))",
+        },
+        role: {
+          "employee-bg": "hsl(var(--role-employee-bg))",
+          "employee-text": "hsl(var(--role-employee-text))",
+          "manager-bg": "hsl(var(--role-manager-bg))",
+          "manager-text": "hsl(var(--role-manager-text))",
+          "hc-bg": "hsl(var(--role-hc-bg))",
+          "hc-text": "hsl(var(--role-hc-text))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -82,10 +85,12 @@ export default {
         lg: "8px",
         md: "6px",
         sm: "4px",
+        xl: "10px",
+        "2xl": "12px",
       },
       fontFamily: {
         sans: ['"Inter"', 'system-ui', 'sans-serif'],
-        mono: ['"SF Mono"', '"Fira Code"', 'monospace'],
+        mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
       },
       keyframes: {
         "accordion-down": {
@@ -96,15 +101,10 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "counter": {
-          "0%": { opacity: "0", transform: "translateY(4px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "counter": "counter 0.3s ease-out",
       },
     },
   },

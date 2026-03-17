@@ -1,82 +1,23 @@
-export type UserRole = 'employee' | 'manager' | 'hr' | 'admin';
+export type UserRole = 'employee' | 'manager' | 'hc';
 
-export interface User {
-  id: string;
-  fullName: string;
-  email: string;
-  department: string;
-  unit: string;
-  jobTitle: string;
-  managerId: string;
-  managerName: string;
-  role: UserRole;
-  longevity: string;
-  qualification: string;
-  maritalStatus: string;
-}
-
-export interface KPIEntry {
-  id: string;
-  title: string;
-  rating: number;
-  comment: string;
-}
-
-export interface EvaluationForm {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  department: string;
-  unit: string;
-  jobTitle: string;
-  longevity: string;
-  qualification: string;
-  maritalStatus: string;
-  evaluationYear: number;
-  isSalesStaff: boolean;
-
-  primaryA1: KPIEntry[];
-  primaryA2: KPIEntry[];
-  secondaryKPIs: KPIEntry[];
-  genericKPIs: KPIEntry[];
-
-  careerPathPreferences: string;
-  trainingNeeds: string;
-  areasForImprovement: string;
-  proposedActionPlan: string;
-  employeeComments: string;
-  managerRemarks: string;
-  hrRemarks: string;
-
-  status: EvaluationStatus;
-  totalScore: number;
-  classification: string;
-  createdAt: string;
-  updatedAt: string;
-  submittedAt?: string;
-  approvedAt?: string;
-}
-
-export type EvaluationStatus = 'draft' | 'submitted' | 'under_review' | 'changes_requested' | 'approved' | 'validated' | 'archived';
-
-export interface AuditLogEntry {
-  id: string;
-  evaluationId: string;
-  action: string;
-  performedBy: string;
-  performedByRole: UserRole;
-  timestamp: string;
-  details: string;
-  ipAddress: string;
-}
+export type EvaluationStatus =
+  | 'draft'
+  | 'submitted'
+  | 'revision_requested'
+  | 'first_manager_approved'
+  | 'second_manager_review'
+  | 'second_manager_approved'
+  | 'sent_to_hc'
+  | 'hc_validated'
+  | 'archived';
 
 export const RATING_LABELS: Record<number, string> = {
-  0: 'Very Poor',
-  1: 'Poor',
-  2: 'Fairly Good',
-  3: 'Good',
-  4: 'Excellent',
-  5: 'Exceptional',
+  0: 'Not Rated',
+  1: 'Very Poor',
+  2: 'Poor',
+  3: 'Fairly Good',
+  4: 'Good',
+  5: 'Excellent',
 };
 
 export function getClassification(score: number): string {
@@ -100,30 +41,17 @@ export function getClassificationColor(classification: string): string {
   }
 }
 
-export function calculateCategoryScore(entries: KPIEntry[]): number {
-  if (entries.length === 0) return 0;
-  const total = entries.reduce((sum, e) => sum + e.rating, 0);
-  return (total / (entries.length * 5)) * 100;
-}
-
-export function calculateWeightedScore(form: EvaluationForm): number {
-  const a1Weight = form.isSalesStaff ? 0.50 : 0.60;
-  const a2Weight = form.isSalesStaff ? 0.25 : 0.15;
-  const secWeight = 0.10;
-  const genWeight = 0.15;
-
-  const a1Score = calculateCategoryScore(form.primaryA1);
-  const a2Score = calculateCategoryScore(form.primaryA2);
-  const secScore = calculateCategoryScore(form.secondaryKPIs);
-  const genScore = calculateCategoryScore(form.genericKPIs);
-
-  return Math.round(
-    a1Score * a1Weight +
-    a2Score * a2Weight +
-    secScore * secWeight +
-    genScore * genWeight
-  );
-}
+export const STATUS_LABELS: Record<EvaluationStatus, string> = {
+  draft: 'Draft',
+  submitted: 'Submitted',
+  revision_requested: 'Revision Requested',
+  first_manager_approved: '1st Manager Approved',
+  second_manager_review: '2nd Manager Review',
+  second_manager_approved: '2nd Manager Approved',
+  sent_to_hc: 'Sent to HC',
+  hc_validated: 'HC Validated',
+  archived: 'Archived',
+};
 
 export const WIZARD_STEPS = [
   { id: 'general', label: 'General', description: 'Employee Information' },
@@ -134,3 +62,26 @@ export const WIZARD_STEPS = [
   { id: 'additional', label: 'Additional', description: 'Career & Development' },
   { id: 'finalize', label: 'Finalize', description: 'Review & Submit' },
 ] as const;
+
+// Score hash computation for tamper detection
+export async function computeScoreHash(
+  a1Ratings: number[],
+  a2Ratings: number[],
+  secRatings: number[],
+  genRatings: number[],
+  finalScore: number
+): Promise<string> {
+  const hashInput = [
+    a1Ratings.join('-'),
+    a2Ratings.join('-'),
+    secRatings.join('-'),
+    genRatings.join('-'),
+    finalScore.toFixed(2),
+  ].join('|');
+
+  const encoder = new TextEncoder();
+  const data = encoder.encode(hashInput);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
