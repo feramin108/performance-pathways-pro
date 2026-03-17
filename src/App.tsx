@@ -18,6 +18,16 @@ import TeamEvaluations from "./pages/manager/TeamEvaluations";
 import ApprovedEvaluations from "./pages/manager/ApprovedEvaluations";
 import ManagerNotifications from "./pages/manager/ManagerNotifications";
 import HCDashboard from "./pages/hc/HCDashboard";
+import HCPendingValidation from "./pages/hc/HCPendingValidation";
+import HCEvaluationValidation from "./pages/hc/HCEvaluationValidation";
+import HCAllEvaluations from "./pages/hc/HCAllEvaluations";
+import HCCalibration from "./pages/hc/HCCalibration";
+import HCEmployeeDirectory from "./pages/hc/HCEmployeeDirectory";
+import HCKPIManagement from "./pages/hc/HCKPIManagement";
+import HCCycles from "./pages/hc/HCCycles";
+import HCReports from "./pages/hc/HCReports";
+import HCAuditLog from "./pages/hc/HCAuditLog";
+import HCNotifications from "./pages/hc/HCNotifications";
 import ComingSoon from "./pages/ComingSoon";
 
 const queryClient = new QueryClient();
