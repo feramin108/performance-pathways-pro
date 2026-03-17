@@ -115,21 +115,16 @@ export default function EvaluationWizard() {
     }
   }, [activeCycle]);
 
-  // Initialize KPIs from templates
+  // Initialize with one empty A2 WIG KPI if no KPIs yet (not from templates)
   useEffect(() => {
-    if (!templates || templates.length === 0 || kpis.length > 0) return;
-    const initial: LocalKPI[] = (templates as any[]).map((t, i) => ({
-      template_id: t.id,
-      goal_id: null,
-      category: t.category,
-      title: t.title,
-      isCustom: false,
-      employee_rating: null,
-      employee_comment: '',
-      sort_order: t.sort_order ?? i,
-    }));
-    setKpis(initial);
-  }, [templates]);
+    if (kpis.length > 0 || evalId) return;
+    // Start with just one empty A2_WIG entry — user adds all others
+    setKpis([{
+      template_id: null, goal_id: null, category: 'A2_WIG',
+      title: '', isCustom: true, employee_rating: null,
+      employee_comment: '', sort_order: 0,
+    }]);
+  }, [evalId]);
 
   // Load existing draft
   useEffect(() => {
