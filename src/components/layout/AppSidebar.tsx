@@ -21,10 +21,10 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['employee', 'manager', 'hr', 'admin'] },
-  { label: 'My Evaluations', icon: FileText, path: '/evaluations', roles: ['employee'] },
-  { label: 'New Evaluation', icon: ClipboardList, path: '/evaluation/new', roles: ['employee'] },
-  { label: 'Team Reviews', icon: Users, path: '/reviews', roles: ['manager'] },
-  { label: 'All Evaluations', icon: FileText, path: '/hr/evaluations', roles: ['hr'] },
+  { label: 'Employee Panel', icon: FileText, path: '/employee', roles: ['employee', 'manager', 'hr', 'admin'] },
+  { label: 'New Evaluation', icon: ClipboardList, path: '/evaluation/new', roles: ['employee', 'manager', 'hr', 'admin'] },
+  { label: 'Manager Panel', icon: Users, path: '/manager', roles: ['employee', 'manager', 'hr', 'admin'] },
+  { label: 'HR Panel', icon: BarChart3, path: '/hr', roles: ['employee', 'manager', 'hr', 'admin'] },
   { label: 'Analytics', icon: BarChart3, path: '/analytics', roles: ['hr', 'admin'] },
   { label: 'Audit Logs', icon: Shield, path: '/audit', roles: ['admin'] },
   { label: 'Administration', icon: Settings, path: '/admin', roles: ['admin'] },

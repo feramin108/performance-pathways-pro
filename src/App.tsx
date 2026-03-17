@@ -4,6 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import EmployeePanelPage from "./pages/EmployeePanelPage";
+import ManagerPanelPage from "./pages/ManagerPanelPage";
+import HRPanelPage from "./pages/HRPanelPage";
 import NewEvaluationPage from "./pages/NewEvaluationPage";
 import EvaluationDetailPage from "./pages/EvaluationDetailPage";
 
@@ -18,11 +21,14 @@ const App = () => (
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/employee" element={<EmployeePanelPage />} />
+          <Route path="/employee/evaluations" element={<EmployeePanelPage />} />
+          <Route path="/manager" element={<ManagerPanelPage />} />
+          <Route path="/manager/reviews" element={<ManagerPanelPage />} />
+          <Route path="/hr" element={<HRPanelPage />} />
+          <Route path="/hr/evaluations" element={<HRPanelPage />} />
           <Route path="/evaluation/new" element={<NewEvaluationPage />} />
           <Route path="/evaluation/:id" element={<EvaluationDetailPage />} />
-          <Route path="/evaluations" element={<DashboardPage />} />
-          <Route path="/reviews" element={<DashboardPage />} />
-          <Route path="/hr/evaluations" element={<DashboardPage />} />
           <Route path="/analytics" element={<DashboardPage />} />
           <Route path="/audit" element={<DashboardPage />} />
           <Route path="/admin" element={<DashboardPage />} />
