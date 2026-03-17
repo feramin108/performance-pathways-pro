@@ -1,0 +1,9 @@
+export const featureFlags = {
+  AI_INSIGHTS_ENABLED: true,
+  PDF_DOWNLOAD_ENABLED: true,
+  BULK_EMAIL_ENABLED: true,
+  CALIBRATION_VIEW_ENABLED: true,
+  SLA_TRACKER_ENABLED: true,
+  GOAL_SETTING_ENABLED: true,
+  TAMPER_DETECTION_ENABLED: true,
+} as const;

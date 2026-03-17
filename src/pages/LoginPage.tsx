@@ -1,148 +1,149 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Shield, AlertCircle, Users, UserCheck, BarChart3, Settings } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { Eye, EyeOff, AlertCircle, Users, UserCheck, Shield } from 'lucide-react';
 
 const DEMO_ACCOUNTS = [
-  { label: 'Employee', email: 'employee@demo.com', password: 'demo123456', icon: Users, color: 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20' },
-  { label: 'Line Manager', email: 'manager@demo.com', password: 'demo123456', icon: UserCheck, color: 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20' },
-  { label: 'HR', email: 'hr@demo.com', password: 'demo123456', icon: BarChart3, color: 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20' },
-  { label: 'SuperAdmin', email: 'admin@demo.com', password: 'demo123456', icon: Settings, color: 'bg-primary/10 text-primary hover:bg-primary/20' },
+  { label: 'Employee Demo', email: 'employee@bank.local', password: 'Demo@1234', className: 'bg-role-employee-bg text-role-employee-text hover:opacity-90' },
+  { label: 'Line Manager Demo', email: 'manager@bank.local', password: 'Demo@1234', className: 'bg-role-manager-bg text-role-manager-text hover:opacity-90' },
+  { label: 'HC Demo', email: 'hc@bank.local', password: 'Demo@1234', className: 'bg-role-hc-bg text-role-hc-text hover:opacity-90' },
 ];
+
+const ROLE_DASHBOARDS: Record<string, string> = {
+  employee: '/employee/dashboard',
+  manager: '/manager/dashboard',
+  hc: '/hc/dashboard',
+};
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [fullName, setFullName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { session, role } = useAuth();
 
+  // Redirect if already logged in
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate('/dashboard');
-      }
-    });
+    if (session && role) {
+      navigate(ROLE_DASHBOARDS[role] || '/employee/dashboard');
+    }
+  }, [session, role, navigate]);
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate('/dashboard');
-    });
+  const handleLogin = async (loginEmail?: string, loginPassword?: string) => {
+    const useEmail = loginEmail || email;
+    const usePassword = loginPassword || password;
 
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    if (!useEmail || !usePassword) {
+      setError('Please enter your credentials.');
+      return;
+    }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: fullName },
-            emailRedirectTo: window.location.origin,
-          },
-        });
-        if (signUpError) throw signUpError;
-      } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (signInError) throw signInError;
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: useEmail,
+        password: usePassword,
+      });
+      if (signInError) throw signInError;
+
+      // Update last_login_at
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('profiles').update({ last_login_at: new Date().toISOString() } as any).eq('id', user.id);
+      }
+
+      // Fetch role and redirect
+      if (user) {
+        const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', user.id).limit(1).single();
+        const userRole = (roleData as any)?.role || 'employee';
+        navigate(ROLE_DASHBOARDS[userRole] || '/employee/dashboard');
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication failed');
+      setError(err.message || 'Invalid credentials. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleLogin();
+  };
+
   const handleDemoLogin = (demoEmail: string, demoPassword: string) => {
     setEmail(demoEmail);
     setPassword(demoPassword);
-    setIsSignUp(false);
     setError('');
+    // Auto-submit
+    handleLogin(demoEmail, demoPassword);
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <motion.div
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="w-full max-w-sm"
-      >
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
-            <Shield className="h-6 w-6 text-primary-foreground" />
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="w-full max-w-[420px]">
+        {/* Logo Placeholder */}
+        <div className="flex justify-center mb-6">
+          <div className="h-10 w-[120px] rounded-lg bg-card border border-border flex items-center justify-center text-xs text-muted-foreground">
+            BANK LOGO
           </div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">
-            Performance Ledger
-          </h1>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Enterprise Performance Management System
-          </p>
         </div>
 
-        {/* Login Form */}
-        <div className="surface-card p-6">
-          <p className="mb-4 text-xs text-muted-foreground">
-            {isSignUp ? 'Create your account' : 'Sign in to your account'}
-          </p>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            {isSignUp && (
-              <div>
-                <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={e => setFullName(e.target.value)}
-                  placeholder="John Doe"
-                  className="input-inset w-full"
-                  required={isSignUp}
-                />
-              </div>
-            )}
+        {/* Heading */}
+        <h1 className="text-center text-xl font-medium text-foreground mb-1">
+          Staff Performance Evaluation System
+        </h1>
+        <p className="text-center text-[13px] text-muted-foreground mb-8">
+          Sign in with your corporate account
+        </p>
+
+        {/* Form Card */}
+        <div className="surface-card p-8">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                Email
+              <label className="block text-[13px] font-medium text-muted-foreground mb-1.5">
+                Domain Username
               </label>
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={e => { setEmail(e.target.value); setError(''); }}
-                placeholder="name@bank.com"
-                className="input-inset w-full"
+                placeholder='username or BANK\username'
+                className="input-field w-full"
                 required
               />
             </div>
+
             <div>
-              <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <label className="block text-[13px] font-medium text-muted-foreground mb-1.5">
                 Password
               </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="input-inset w-full"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="input-field w-full pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-fast"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 rounded-sm bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                <AlertCircle className="h-3 w-3 flex-shrink-0" />
+              <div className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2.5 text-[13px] text-destructive">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 {error}
               </div>
             )}
@@ -150,44 +151,46 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-mechanical hover:bg-primary/90 disabled:opacity-50"
+              className="w-full h-11 rounded-lg bg-primary text-sm font-medium text-primary-foreground transition-fast hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
+              {loading ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
+                  Verifying...
+                </>
+              ) : (
+                'Sign In with Active Directory'
+              )}
             </button>
           </form>
 
-          <button
-            onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
-            className="mt-3 w-full text-center text-xs text-muted-foreground transition-mechanical hover:text-foreground"
-          >
-            {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-          </button>
-        </div>
+          {/* Demo Divider */}
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground">Demo Access</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
 
-        {/* Demo Quick Login */}
-        <div className="mt-4 surface-card p-4">
-          <p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Quick Demo Login</p>
-          <div className="grid grid-cols-2 gap-2">
+          {/* Demo Buttons */}
+          <div className="flex gap-2">
             {DEMO_ACCOUNTS.map(demo => (
               <button
                 key={demo.label}
                 onClick={() => handleDemoLogin(demo.email, demo.password)}
-                className={`flex items-center gap-2 rounded-sm px-3 py-2 text-xs font-medium transition-mechanical ${demo.color}`}
+                disabled={loading}
+                className={`flex-1 h-10 rounded-lg text-[13px] font-medium transition-fast disabled:opacity-50 ${demo.className}`}
               >
-                <demo.icon className="h-3.5 w-3.5" />
                 {demo.label}
               </button>
             ))}
           </div>
-          <p className="mt-2 text-[10px] text-muted-foreground text-center">
-            Click a role above to fill credentials, then press Sign In
-          </p>
         </div>
 
-        <p className="mt-4 text-center text-[10px] text-muted-foreground">
-          Secure banking environment • HTTPS encrypted • Audit logged
+        {/* Footer */}
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          © 2025 Staff Appraisal System · IT Department
         </p>
-      </motion.div>
+      </div>
     </div>
   );
 }
