@@ -39,25 +39,37 @@ export default function EvaluationDetail() {
       setAuditLogs((logs as any) || []);
       setLoading(false);
 
-      // Tamper check
-      if (ev && (ev as any).score_hash && (ev as any).status !== 'draft') {
-        const entriesForHash: KPIEntryType[] = ((entries as any) || []).map((e: any) => ({
-          category: e.category,
-          employee_rating: e.employee_rating,
-          sort_order: e.sort_order,
-        }));
-        const hash = await computeScoreHash(entriesForHash, (ev as any).final_score || 0);
-        if (hash !== (ev as any).score_hash) {
-          setTampered(true);
-          await supabase.from('evaluations').update({ score_tampered: true } as any).eq('id', id);
-          await supabase.from('audit_logs').insert({
-            evaluation_id: id,
-            actor_id: user?.id,
-            action: 'TAMPER ALERT: Score hash mismatch detected',
-            tamper_detected: true,
-          } as any);
-        }
+      if (!ev || (ev as any).status === 'draft') {
+        setTampered(false);
+        return;
       }
+
+      const entriesForHash: KPIEntryType[] = ((entries as any) || []).map((e: any) => ({
+        category: e.category,
+        employee_rating: e.employee_rating,
+        sort_order: e.sort_order,
+      }));
+      const hash = await computeScoreHash(entriesForHash, (ev as any).final_score || 0);
+
+      if (!(ev as any).score_hash) {
+        setTampered(false);
+        await supabase.from('evaluations').update({ score_hash: hash, score_tampered: false } as any).eq('id', id);
+        return;
+      }
+
+      if (hash !== (ev as any).score_hash) {
+        setTampered(true);
+        await supabase.from('evaluations').update({ score_tampered: true } as any).eq('id', id);
+        await supabase.from('audit_logs').insert({
+          evaluation_id: id,
+          actor_id: user?.id,
+          action: 'TAMPER ALERT: Score hash mismatch detected',
+          tamper_detected: true,
+        } as any);
+        return;
+      }
+
+      setTampered(false);
     })();
   }, [id, user]);
 

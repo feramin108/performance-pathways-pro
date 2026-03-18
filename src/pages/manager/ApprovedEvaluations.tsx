@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useManagerEvaluations } from '@/hooks/useSupabaseQueries';
 import { useAuth } from '@/contexts/AuthContext';
 import { getClassificationBg, getClassification } from '@/lib/scoreEngine';
+import { getEvaluationStatus } from '@/lib/evaluationAudit';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Send, CheckCircle, BarChart3, Trophy, AlertTriangle } from 'lucide-react';

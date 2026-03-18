@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Clock, RotateCcw, CheckCircle, Send, AlertTriangle, X } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { getClassification } from '@/lib/scoreEngine';
+import { getEvaluationStatus } from '@/lib/evaluationAudit';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 

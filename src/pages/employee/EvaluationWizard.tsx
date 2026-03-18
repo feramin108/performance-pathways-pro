@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useActiveCycle, useKPITemplates } from '@/hooks/useSupabaseQueries';
 import { calculateScores, computeScoreHash, generateMockAISummary, getClassificationBg, type KPIEntry as KPIEntryType } from '@/lib/scoreEngine';
+import { getEvaluationStatus } from '@/lib/evaluationAudit';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Save, CheckCircle, Info } from 'lucide-react';
 

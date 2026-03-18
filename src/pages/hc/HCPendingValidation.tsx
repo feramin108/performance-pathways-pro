@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useHCEvaluations, useAllProfiles } from '@/hooks/useSupabaseQueries';
 import { supabase } from '@/integrations/supabase/client';
+import { getEvaluationStatus } from '@/lib/evaluationAudit';
 import { useAuth } from '@/contexts/AuthContext';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
