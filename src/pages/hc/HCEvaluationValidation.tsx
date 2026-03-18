@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { getEvaluationStatus } from '@/lib/evaluationAudit';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -103,10 +104,11 @@ export default function HCEvaluationValidation() {
     if (!decision) { toast.error('Please select an HC decision.'); return; }
     setLoading(true);
     try {
+      const oldStatus = (await getEvaluationStatus(id!)) || 'sent_to_hc';
       await supabase.from('audit_logs').insert({
         evaluation_id: id, actor_id: user?.id, actor_role: 'hc',
         actor_username: profile?.full_name, action: `HC validation completed — ${decision}`,
-        old_status: 'sent_to_hc', new_status: 'hc_validated',
+        old_status: oldStatus, new_status: 'hc_validated',
       });
       await supabase.from('evaluations').update({
         hc_remarks: hcRemarks, hc_decision: decision, status: 'hc_validated',
@@ -135,10 +137,11 @@ export default function HCEvaluationValidation() {
     if (!mgmtAction || mgmtAction.length < 10) { toast.error('Management action must be at least 10 characters.'); return; }
     setLoading(true);
     try {
+      const oldStatus = (await getEvaluationStatus(id!)) || 'hc_validated';
       await supabase.from('audit_logs').insert({
         evaluation_id: id, actor_id: user?.id, actor_role: 'hc',
         actor_username: profile?.full_name, action: 'Evaluation archived — final',
-        old_status: 'hc_validated', new_status: 'archived',
+        old_status: oldStatus, new_status: 'archived',
       });
       await supabase.from('evaluations').update({
         management_action: mgmtAction, status: 'archived', archived_at: new Date().toISOString(),

@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useActiveCycle, useKPITemplates } from '@/hooks/useSupabaseQueries';
 import { calculateScores, computeScoreHash, generateMockAISummary, getClassificationBg, type KPIEntry as KPIEntryType } from '@/lib/scoreEngine';
+import { getEvaluationStatus } from '@/lib/evaluationAudit';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Save, CheckCircle, Info } from 'lucide-react';
 
@@ -315,6 +316,7 @@ export default function EvaluationWizard() {
     if (!validation.allPassed || !user || !evaluationId) return;
     setSubmitting(true);
     try {
+      const oldStatus = (await getEvaluationStatus(evaluationId)) || 'draft';
       const hash = await computeScoreHash(
         kpis.map(k => ({ category: k.category, employee_rating: k.employee_rating, sort_order: k.sort_order })),
         scores.finalScore,
@@ -344,14 +346,13 @@ export default function EvaluationWizard() {
         gen_weighted: scores.generic.weighted,
       } as any).eq('id', evaluationId);
 
-      // Audit log
       await supabase.from('audit_logs').insert({
         evaluation_id: evaluationId,
         actor_id: user.id,
         actor_role: 'employee',
         actor_username: profile?.username || profile?.full_name,
         action: 'Evaluation submitted by employee',
-        old_status: 'draft',
+        old_status: oldStatus,
         new_status: 'submitted',
       } as any);
 

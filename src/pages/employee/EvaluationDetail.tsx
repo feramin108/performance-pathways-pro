@@ -39,25 +39,37 @@ export default function EvaluationDetail() {
       setAuditLogs((logs as any) || []);
       setLoading(false);
 
-      // Tamper check
-      if (ev && (ev as any).score_hash && (ev as any).status !== 'draft') {
-        const entriesForHash: KPIEntryType[] = ((entries as any) || []).map((e: any) => ({
-          category: e.category,
-          employee_rating: e.employee_rating,
-          sort_order: e.sort_order,
-        }));
-        const hash = await computeScoreHash(entriesForHash, (ev as any).final_score || 0);
-        if (hash !== (ev as any).score_hash) {
-          setTampered(true);
-          await supabase.from('evaluations').update({ score_tampered: true } as any).eq('id', id);
-          await supabase.from('audit_logs').insert({
-            evaluation_id: id,
-            actor_id: user?.id,
-            action: 'TAMPER ALERT: Score hash mismatch detected',
-            tamper_detected: true,
-          } as any);
-        }
+      if (!ev || (ev as any).status === 'draft') {
+        setTampered(false);
+        return;
       }
+
+      const entriesForHash: KPIEntryType[] = ((entries as any) || []).map((e: any) => ({
+        category: e.category,
+        employee_rating: e.employee_rating,
+        sort_order: e.sort_order,
+      }));
+      const hash = await computeScoreHash(entriesForHash, (ev as any).final_score || 0);
+
+      if (!(ev as any).score_hash) {
+        setTampered(false);
+        await supabase.from('evaluations').update({ score_hash: hash, score_tampered: false } as any).eq('id', id);
+        return;
+      }
+
+      if (hash !== (ev as any).score_hash) {
+        setTampered(true);
+        await supabase.from('evaluations').update({ score_tampered: true } as any).eq('id', id);
+        await supabase.from('audit_logs').insert({
+          evaluation_id: id,
+          actor_id: user?.id,
+          action: 'TAMPER ALERT: Score hash mismatch detected',
+          tamper_detected: true,
+        } as any);
+        return;
+      }
+
+      setTampered(false);
     })();
   }, [id, user]);
 
@@ -93,11 +105,13 @@ export default function EvaluationDetail() {
   return (
     <DashboardLayout pageTitle={`Evaluation — ${evaluation.cycle_id ? new Date().getFullYear() : ''}`}>
       {/* Download PDF */}
-      <div className="flex justify-end mb-4">
-        <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition-fast">
-          <Download className="h-4 w-4" /> Download PDF
-        </button>
-      </div>
+      {evaluation.status !== 'draft' && (
+        <div className="flex justify-end mb-4">
+          <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition-fast">
+            <Download className="h-4 w-4" /> Download PDF
+          </button>
+        </div>
+      )}
       {/* Tamper Alert */}
       {(tampered || evaluation.score_tampered) && (
         <div className="mb-4 flex items-center gap-2 rounded-lg bg-destructive/20 border border-destructive/50 px-4 py-3 text-sm text-destructive">

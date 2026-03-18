@@ -43,26 +43,30 @@ export function NotificationBell() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: notifications, refetch } = useNotifications();
+  const [items, setItems] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const unreadCount = useMemo(() => notifications?.filter((n: any) => !n.is_read).length || 0, [notifications]);
+  useEffect(() => {
+    setItems(notifications || []);
+  }, [notifications]);
 
-  // Realtime subscription
+  const unreadCount = useMemo(() => items.filter((n: any) => !n.is_read).length, [items]);
+
   useEffect(() => {
     if (!user) return;
     const channel = supabase
       .channel('notif-bell')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `recipient_id=eq.${user.id}` }, (payload: any) => {
-        refetch();
         const n = payload.new;
+        setItems(prev => [n, ...prev]);
+        queryClient.setQueryData(['notifications'], (prev: any[] | undefined) => [n, ...(prev || [])]);
         toast(n.title || 'New notification', { description: n.message?.slice(0, 80), duration: 4000 });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user, refetch]);
+  }, [user, queryClient]);
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
@@ -71,17 +75,39 @@ export function NotificationBell() {
   }, [open]);
 
   const markAllRead = async () => {
-    const unread = (notifications || []).filter((n: any) => !n.is_read);
-    for (const n of unread) {
-      await supabase.from('notifications').update({ is_read: true } as any).eq('id', n.id);
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true } as any)
+        .eq('recipient_id', user.id)
+        .eq('is_read', false);
+
+      if (error) throw error;
+
+      setItems(prev => prev.map((n: any) => ({ ...n, is_read: true })));
+      queryClient.setQueryData(['notifications'], (prev: any[] | undefined) =>
+        (prev || []).map((n: any) => ({ ...n, is_read: true }))
+      );
+      refetch();
+    } catch (err: any) {
+      toast.error(`Failed to mark notifications as read: ${err?.message || 'Unknown error'}`);
     }
-    refetch();
   };
 
   const handleClick = async (n: any) => {
     if (!n.is_read) {
-      await supabase.from('notifications').update({ is_read: true } as any).eq('id', n.id);
-      refetch();
+      try {
+        const { error } = await supabase.from('notifications').update({ is_read: true } as any).eq('id', n.id);
+        if (error) throw error;
+        setItems(prev => prev.map((item: any) => item.id === n.id ? { ...item, is_read: true } : item));
+        queryClient.setQueryData(['notifications'], (prev: any[] | undefined) =>
+          (prev || []).map((item: any) => item.id === n.id ? { ...item, is_read: true } : item)
+        );
+        refetch();
+      } catch (err: any) {
+        toast.error(`Failed to update notification: ${err?.message || 'Unknown error'}`);
+      }
     }
     setOpen(false);
     if (n.evaluation_id) {
@@ -91,7 +117,7 @@ export function NotificationBell() {
     }
   };
 
-  const sorted = [...(notifications || [])].sort((a: any, b: any) => {
+  const sorted = [...items].sort((a: any, b: any) => {
     if (a.is_read !== b.is_read) return a.is_read ? 1 : -1;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   }).slice(0, 10);
@@ -109,7 +135,6 @@ export function NotificationBell() {
 
       {open && (
         <div className="absolute right-0 top-12 z-[100] w-[380px] max-h-[480px] overflow-hidden rounded-xl border border-border bg-card shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150">
-          {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-foreground">Notifications</span>
@@ -122,7 +147,6 @@ export function NotificationBell() {
             )}
           </div>
 
-          {/* List */}
           <div className="overflow-y-auto max-h-[380px]">
             {sorted.length > 0 ? sorted.map((n: any) => {
               const cfg = TYPE_CONFIG[n.type] || TYPE_CONFIG.reminder;
@@ -150,7 +174,6 @@ export function NotificationBell() {
             )}
           </div>
 
-          {/* Footer */}
           <div className="border-t border-border px-4 py-2">
             <button onClick={() => { setOpen(false); navigate(`/${role || 'employee'}/notifications`); }}
               className="text-xs text-primary hover:underline w-full text-center">
