@@ -108,28 +108,35 @@ export default function ManagerReview() {
     if (!revisionNote.trim() || !id || !user) return;
     setProcessing(true);
     try {
+      const oldStatus = (await getEvaluationStatus(id)) || evaluation?.status || 'submitted';
+
       await supabase.from('evaluations').update({
         status: 'revision_requested',
         revision_note: revisionNote,
         revision_count: (evaluation?.revision_count || 0) + 1,
         last_revision_requested_at: new Date().toISOString(),
       } as any).eq('id', id);
+
       await supabase.from('audit_logs').insert({
         evaluation_id: id, actor_id: user.id, actor_role: 'manager',
         actor_username: profile?.full_name,
         action: `Revision requested by ${myRole === 'second_manager' ? 'second' : 'first'} line manager`,
-        old_status: evaluation.status, new_status: 'revision_requested',
+        old_status: oldStatus, new_status: 'revision_requested',
       } as any);
+
       await supabase.from('notifications').insert({
         recipient_id: evaluation.employee_id, type: 'revision_requested',
         title: 'Evaluation returned for revision',
         message: `${profile?.full_name} has requested changes to your evaluation: ${revisionNote.slice(0, 100)}`,
         evaluation_id: id,
       } as any);
-      toast.success(`Revision request sent.`);
+      toast.success('Revision request sent.');
       navigate('/manager/dashboard');
-    } catch { toast.error('Failed'); }
-    finally { setProcessing(false); }
+    } catch {
+      toast.error('Failed');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleApprove = async () => {
