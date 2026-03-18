@@ -157,6 +157,7 @@ export default function ManagerReview() {
 
       let newStatus: string;
       let action: string;
+      const oldStatus = (await getEvaluationStatus(id)) || evaluation?.status || 'submitted';
 
       if (myRole === 'second_manager') {
         newStatus = 'sent_to_hc';
@@ -178,7 +179,6 @@ export default function ManagerReview() {
           second_manager_id: secondManagerId,
           stage_second_manager_started_at: new Date().toISOString(),
         } as any).eq('id', id);
-        // Notify second manager
         await supabase.from('notifications').insert({
           recipient_id: secondManagerId, type: 'second_mgr_needed',
           title: 'Evaluation requires your sign-off',
@@ -199,7 +199,9 @@ export default function ManagerReview() {
       await supabase.from('audit_logs').insert({
         evaluation_id: id, actor_id: user.id, actor_role: 'manager',
         actor_username: profile?.full_name,
-        action, old_status: evaluation.status, new_status: newStatus,
+        action,
+        old_status: oldStatus,
+        new_status: newStatus,
       } as any);
 
       // Notify employee

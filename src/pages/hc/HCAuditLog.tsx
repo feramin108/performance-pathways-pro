@@ -111,7 +111,11 @@ export default function HCAuditLog() {
                 </TableCell>
                 <TableCell className="text-xs max-w-[300px] truncate">{l.action}</TableCell>
                 <TableCell className="text-xs">
-                  {l.old_status && <><StatusBadge status={l.old_status} /> → <StatusBadge status={l.new_status} /></>}
+                  {l.old_status && l.new_status ? (
+                    <>
+                      <StatusBadge status={l.old_status} tone="muted" /> → <StatusBadge status={l.new_status} />
+                    </>
+                  ) : '—'}
                 </TableCell>
                 <TableCell>{l.tamper_detected && <span className="text-xs rounded px-2 py-0.5 font-medium" style={{ background: '#7c2d12', color: '#fca5a5' }}>⚠ TAMPER</span>}</TableCell>
               </TableRow>
