@@ -70,13 +70,14 @@ export default function ManagerDashboard() {
     setBulkProcessing(true);
     try {
       for (const evalId of selected) {
+        const oldStatus = (await getEvaluationStatus(evalId)) || 'submitted';
         await supabase.from('evaluations').update({
           status: 'first_manager_approved',
           first_manager_reviewed_at: new Date().toISOString(),
         } as any).eq('id', evalId);
         await supabase.from('audit_logs').insert({
           evaluation_id: evalId, actor_id: myId, actor_role: 'manager',
-          action: 'Bulk approved by manager', old_status: 'submitted', new_status: 'first_manager_approved',
+          action: 'Bulk approved by manager', old_status: oldStatus, new_status: 'first_manager_approved',
         } as any);
       }
       toast.success(`${selected.length} evaluations approved.`);

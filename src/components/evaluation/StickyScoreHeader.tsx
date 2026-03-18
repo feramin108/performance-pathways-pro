@@ -6,7 +6,7 @@ interface StickyScoreHeaderProps {
 }
 
 export function StickyScoreHeader({ scores }: StickyScoreHeaderProps) {
-  const fmt = (v: number) => v > 0 ? v.toFixed(2) : '--';
+  const fmt = (v: number) => Number.isFinite(v) && v > 0 ? v.toFixed(2) : '--';
   const classification = scores?.classification || '--';
   const classBg = scores ? getClassificationBg(classification) : 'bg-card text-muted-foreground';
 

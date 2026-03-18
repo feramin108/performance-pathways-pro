@@ -57,6 +57,7 @@ export default function HCPendingValidation() {
     setLoading(true);
     try {
       for (const id of selected) {
+        const oldStatus = (await getEvaluationStatus(id)) || 'sent_to_hc';
         await supabase.from('evaluations').update({
           hc_remarks: bulkRemarks,
           hc_decision: 'validated',
@@ -68,7 +69,7 @@ export default function HCPendingValidation() {
         await supabase.from('audit_logs').insert({
           evaluation_id: id, actor_id: user?.id, actor_role: 'hc',
           actor_username: profile?.full_name, action: 'HC validation completed — validated',
-          old_status: 'sent_to_hc', new_status: 'hc_validated',
+          old_status: oldStatus, new_status: 'hc_validated',
         });
         if (ev) {
           await supabase.from('notifications').insert({

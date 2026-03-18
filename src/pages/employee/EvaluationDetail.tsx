@@ -105,11 +105,13 @@ export default function EvaluationDetail() {
   return (
     <DashboardLayout pageTitle={`Evaluation — ${evaluation.cycle_id ? new Date().getFullYear() : ''}`}>
       {/* Download PDF */}
-      <div className="flex justify-end mb-4">
-        <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition-fast">
-          <Download className="h-4 w-4" /> Download PDF
-        </button>
-      </div>
+      {evaluation.status !== 'draft' && (
+        <div className="flex justify-end mb-4">
+          <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition-fast">
+            <Download className="h-4 w-4" /> Download PDF
+          </button>
+        </div>
+      )}
       {/* Tamper Alert */}
       {(tampered || evaluation.score_tampered) && (
         <div className="mb-4 flex items-center gap-2 rounded-lg bg-destructive/20 border border-destructive/50 px-4 py-3 text-sm text-destructive">

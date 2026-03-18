@@ -36,6 +36,7 @@ export default function ApprovedEvaluations() {
     setSending(true);
     try {
       for (const ev of readyForHC) {
+        const oldStatus = (await getEvaluationStatus((ev as any).id)) || 'first_manager_approved';
         await supabase.from('evaluations').update({
           status: 'sent_to_hc',
           stage_hc_review_started_at: new Date().toISOString(),
@@ -43,7 +44,7 @@ export default function ApprovedEvaluations() {
         await supabase.from('audit_logs').insert({
           evaluation_id: (ev as any).id, actor_id: myId, actor_role: 'manager',
           actor_username: profile?.full_name,
-          action: 'Batch sent to HC by manager', old_status: 'first_manager_approved', new_status: 'sent_to_hc',
+          action: 'Batch sent to HC by manager', old_status: oldStatus, new_status: 'sent_to_hc',
         } as any);
       }
       toast.success(`${readyForHC.length} evaluations sent to HC.`);
