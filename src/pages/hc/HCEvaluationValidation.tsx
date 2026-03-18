@@ -104,10 +104,11 @@ export default function HCEvaluationValidation() {
     if (!decision) { toast.error('Please select an HC decision.'); return; }
     setLoading(true);
     try {
+      const oldStatus = (await getEvaluationStatus(id!)) || 'sent_to_hc';
       await supabase.from('audit_logs').insert({
         evaluation_id: id, actor_id: user?.id, actor_role: 'hc',
         actor_username: profile?.full_name, action: `HC validation completed — ${decision}`,
-        old_status: 'sent_to_hc', new_status: 'hc_validated',
+        old_status: oldStatus, new_status: 'hc_validated',
       });
       await supabase.from('evaluations').update({
         hc_remarks: hcRemarks, hc_decision: decision, status: 'hc_validated',
