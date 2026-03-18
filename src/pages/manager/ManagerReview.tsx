@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateScores, getClassificationBg, getClassification } from '@/lib/scoreEngine';
+import { getEvaluationStatus } from '@/lib/evaluationAudit';
 import { toast } from 'sonner';
 import { AlertTriangle, CheckCircle, RotateCcw, X, Download } from 'lucide-react';
 
