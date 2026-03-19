@@ -93,7 +93,7 @@ export function DashboardLayout({ children, pageTitle }: DashboardLayoutProps) {
   const sidebarContent = (
     <>
       <div className="flex items-center gap-2.5 px-4 py-4 border-b border-border">
-        <div className="flex h-10 w-[120px] items-center justify-center rounded-lg bg-card text-xs font-medium text-muted-foreground border border-border">LOGO</div>
+        <img src="/logo.png" alt="NFC Bank" className="h-10 object-contain" />
       </div>
       <div className="px-4 pt-3 pb-1">
         <p className="text-sm font-semibold text-foreground">Staff Appraisal</p>

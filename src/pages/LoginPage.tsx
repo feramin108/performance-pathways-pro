@@ -88,9 +88,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[420px]">
         {/* Logo Placeholder */}
         <div className="flex justify-center mb-6">
-          <div className="h-10 w-[120px] rounded-lg bg-card border border-border flex items-center justify-center text-xs text-muted-foreground">
-            BANK LOGO
-          </div>
+          <img src="/logo.png" alt="NFC Bank" className="h-10 object-contain" />
         </div>
 
         {/* Heading */}
