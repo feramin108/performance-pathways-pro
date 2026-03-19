@@ -10,6 +10,7 @@ import { Save, User } from 'lucide-react';
 export default function ProfilePage() {
   const { profile, refreshProfile } = useAuth();
   const { data: evaluations } = useMyEvaluations();
+  const [managerNames, setManagerNames] = useState({ first: '—', second: '—' });
   const [form, setForm] = useState({
     full_name: '', sex: '', marital_status: '',
     academic_qualification: '', date_joining: '', function_role: '',
@@ -32,6 +33,31 @@ export default function ProfilePage() {
     }
   }, [profile]);
 
+  useEffect(() => {
+    const loadManagers = async () => {
+      if (!profile?.manager_id && !profile?.second_manager_id) {
+        setManagerNames({ first: '—', second: '—' });
+        return;
+      }
+
+      try {
+        const ids = [profile?.manager_id, profile?.second_manager_id].filter(Boolean);
+        const { data, error } = await supabase.from('profiles').select('id, full_name').in('id', ids as string[]);
+        if (error) throw error;
+
+        const byId = new Map((data || []).map((item: any) => [item.id, item.full_name]));
+        setManagerNames({
+          first: profile?.manager_id ? byId.get(profile.manager_id) || '—' : '—',
+          second: profile?.second_manager_id ? byId.get(profile.second_manager_id) || '—' : '—',
+        });
+      } catch {
+        setManagerNames({ first: '—', second: '—' });
+      }
+    };
+
+    loadManagers();
+  }, [profile?.manager_id, profile?.second_manager_id]);
+
   const handleSave = async () => {
     if (!profile) return;
     setSaving(true);
@@ -51,7 +77,6 @@ export default function ProfilePage() {
   return (
     <DashboardLayout pageTitle="My Profile">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Personal Info */}
         <div className="surface-card p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
             <User className="h-4 w-4 text-primary" /> Personal Information
@@ -92,6 +117,8 @@ export default function ProfilePage() {
             <Field label="Occupied Since" value={form.occupied_since} onChange={v => setForm(f => ({ ...f, occupied_since: v }))} type="date" />
             <Field label="Previous Function" value={form.previous_function} onChange={v => setForm(f => ({ ...f, previous_function: v }))} />
             <Field label="Department" value={profile?.department || '—'} readOnly />
+            <Field label="First Line Manager" value={managerNames.first} readOnly />
+            <Field label="Second Line Manager" value={managerNames.second} readOnly />
             <Field label="Branch" value={profile?.branch || '—'} readOnly />
             <Field label="Employee ID" value={profile?.employee_id || '—'} readOnly />
             {profile?.ad_groups && (
@@ -111,7 +138,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Performance Summary */}
         <div className="surface-card p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4">Performance Summary</h2>
           {archived.length > 0 ? (
