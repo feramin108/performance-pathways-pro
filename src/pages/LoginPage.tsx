@@ -32,6 +32,38 @@ export default function LoginPage() {
     }
   }, [session, role, navigate]);
 
+  // LDAP login for real AD users
+  const handleLDAPLogin = async () => {
+    if (!email || !password) {
+      setError('Please enter your domain username and password.');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/ldap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: email, password }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Authentication failed');
+      }
+      localStorage.setItem('spes_token', data.token);
+      localStorage.setItem('spes_role', data.role);
+      localStorage.setItem('spes_profile', JSON.stringify(data.profile));
+      // Force full page reload so AuthContext picks up the new token
+      const destination = ROLE_DASHBOARDS[data.role] || '/employee/dashboard';
+      window.location.href = destination;
+    } catch (err: any) {
+      setError(err.message || 'Invalid credentials. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Demo login — Supabase only
   const handleLogin = async (loginEmail?: string, loginPassword?: string) => {
     const useEmail = loginEmail || email;
     const usePassword = loginPassword || password;
@@ -72,7 +104,7 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleLogin();
+    handleLDAPLogin();
   };
 
   const handleDemoLogin = (demoEmail: string, demoPassword: string) => {

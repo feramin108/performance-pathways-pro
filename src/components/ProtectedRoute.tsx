@@ -8,7 +8,7 @@ const ROLE_DASHBOARDS: Record<string, string> = {
 };
 
 export function ProtectedRoute({ allowedRole, children }: { allowedRole: string; children: React.ReactNode }) {
-  const { session, role, isLoading } = useAuth();
+  const { session, role, isLoading, isLDAPAuth } = useAuth();
 
   if (isLoading) {
     return (
@@ -21,7 +21,10 @@ export function ProtectedRoute({ allowedRole, children }: { allowedRole: string;
     );
   }
 
-  if (!session) {
+  // Allow access if either Supabase session OR valid LDAP token
+  const isAuthenticated = !!session || isLDAPAuth;
+
+  if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
