@@ -128,7 +128,11 @@ export default function HCEmployeeDirectory() {
         .order('full_name');
 
       if (error) throw error;
-      return (data || []) as DirectoryProfile[];
+      return ((data || []) as any[]).map((row) => ({
+        ...row,
+        manager: Array.isArray(row.manager) ? row.manager[0] ?? null : row.manager ?? null,
+        second_manager: Array.isArray(row.second_manager) ? row.second_manager[0] ?? null : row.second_manager ?? null,
+      })) as DirectoryProfile[];
     },
   });
 
