@@ -74,6 +74,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Local REST API (PostgREST-compatible)
+const apiRouter = require('./api.cjs');
+app.use('/rest/v1', apiRouter);
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
