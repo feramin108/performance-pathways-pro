@@ -2,7 +2,7 @@ require('dotenv').config({ path: '/opt/spes/.env' });
 const { ldapAuthenticate } = require('./auth/ldap-adapter.cjs');
 
 // Replace with a real AD username (not password — type it manually)
-ldapAuthenticate('fabrice.mbachan', 'Sk3ptic@nfc.2097')
+ldapAuthenticate('fabrice.mbachan', 'Sk3ptic@again.2097')
   .then(profile => {
     console.log('SUCCESS');
     console.log('Username:', profile.username);

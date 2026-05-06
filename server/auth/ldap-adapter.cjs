@@ -15,7 +15,7 @@ const DEPT_CODES = [
 ];
 
 const BRANCH_CODES = [
-  '020','021','022','023','024','025','026',
+  '020','021','022','023','024','025','026','027',
   '030','031','032',
   '040','041','042','043',
   '050','051','052','053',
@@ -138,22 +138,16 @@ function normaliseGroup(g) {
 }
 
 function extractDeptFromGroups(groups, dn) {
-  // Primary: extract dept from DN OU path
-  // e.g. CN=User,OU=IT,OU=UTILISATEURS,OU=NFCBANK,...
-  // The first OU after CN= is the department OU
+  // Use DN OU path — first OU that matches a dept or branch code
+  // CN=User,OU=IT,OU=UTILISATEURS,... → IT
+  // CN=User,OU=031,OU=UTILISATEURS,... → 031
   if (dn) {
     const ouMatches = String(dn).match(/OU=([^,]+)/gi) || [];
     for (const ou of ouMatches) {
-      const code = ou.replace(/^OU=/i,'').toUpperCase();
-      if (DEPT_CODES.includes(code)) return code;
-    }
-  }
-  // Fallback: look for exact G_DEPTCODE in groups
-  for (const g of groups) {
-    const exact = g.match(/^G_([A-Za-z]+)$/);
-    if (exact) {
-      const norm = exact[1].toUpperCase();
-      if (DEPT_CODES.includes(norm)) return norm;
+      const code = ou.replace(/^OU=/i, '').toUpperCase();
+      if (DEPT_CODES.includes(code) || BRANCH_CODES.includes(code)) {
+        return code;
+      }
     }
   }
   return '';
@@ -223,9 +217,7 @@ async function ldapAuthenticate(username, password) {
   // Step 5: Build profile
   const adRole = detectRoleFromAD(groups);
   const dept   = extractDeptFromGroups(groups, userDN);
-  const branch = extractBranchFromGroups(groups) ||
-                 extractBranchFromDN(userDN) ||
-                 attrs['physicaldeliveryofficename'] || '';
+  const branch = dept;  // branch = dept for branch staff (031, 040 etc.)
 
   return {
     username:    String(attrs['samaccountname'] || username),
