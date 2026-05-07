@@ -34,43 +34,48 @@ function psqlQuery(sql) {
   }
 }
 
-async function upsertProfileLocal(adProfile, finalRole) {
+async function upsertProfileLocal(adProfile, finalRole, forceRoleUpdate) {
   const e = (s) => String(s||'').replace(/'/g, "''");
-  const username = String(adProfile.username || '').replace(/'/g, '');  // strip quotes from username
-
-  const existingRaw = psqlQuery(`SELECT id FROM profiles WHERE username = '${username}' LIMIT 1`);
-  // Extract UUID from result
+  const username = String(adProfile.username || '').replace(/'/g, '');
+  const existingRaw = psqlQuery("SELECT id FROM profiles WHERE username = '" + username + "' LIMIT 1");
   const existingMatch = existingRaw ? existingRaw.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i) : null;
   const existing = existingMatch ? existingMatch[0] : null;
-
   let profileId;
   let isNewUser = false;
-
   if (existing) {
     profileId = existing;
-    psqlQuery(`UPDATE profiles SET full_name='${e(adProfile.full_name)}', email='${e(adProfile.email)}', job_title='${e(adProfile.job_title)}', function_role='${e(adProfile.job_title)}', department='${e(adProfile.department)}', branch='${e(adProfile.branch)}', last_login_at=now(), updated_at=now() WHERE id='${profileId}'`);
-    psqlQuery(`UPDATE user_roles SET role='${e(finalRole)}' WHERE user_id='${profileId}'`);
+    if (!forceRoleUpdate) {
+      const dbRole = psqlQuery("SELECT role FROM user_roles WHERE user_id='" + profileId + "'");
+      if (dbRole && dbRole.trim()) finalRole = dbRole.trim();
+    }
+    psqlQuery("UPDATE profiles SET full_name='" + e(adProfile.full_name) + "', email='" + e(adProfile.email) + "', job_title='" + e(adProfile.job_title) + "', function_role='" + e(adProfile.job_title) + "', department='" + e(adProfile.department) + "', branch='" + e(adProfile.branch) + "', last_login_at=now(), updated_at=now() WHERE id='" + profileId + "'");
+    if (forceRoleUpdate) {
+      psqlQuery("UPDATE user_roles SET role='" + e(finalRole) + "' WHERE user_id='" + profileId + "'");
+    }
   } else {
     isNewUser = true;
-    const empId = adProfile.employee_id ? `'${e(adProfile.employee_id)}'` : 'NULL';
-    const insertResult = psqlQuery(`INSERT INTO profiles (username,full_name,email,job_title,function_role,department,branch,employee_id,is_active,employee_type,last_login_at) VALUES ('${username}','${e(adProfile.full_name)}','${e(adProfile.email)}','${e(adProfile.job_title)}','${e(adProfile.job_title)}','${e(adProfile.department)}','${e(adProfile.branch)}',${empId},true,'non_sales',now()) RETURNING id`);
-    // Extract just the UUID from the result (may contain extra output)
+    const empId = adProfile.employee_id ? "'" + e(adProfile.employee_id) + "'" : 'NULL';
+    const insertResult = psqlQuery("INSERT INTO profiles (username,full_name,email,job_title,function_role,department,branch,employee_id,is_active,employee_type,last_login_at) VALUES ('" + username + "','" + e(adProfile.full_name) + "','" + e(adProfile.email) + "','" + e(adProfile.job_title) + "','" + e(adProfile.job_title) + "','" + e(adProfile.department) + "','" + e(adProfile.branch) + "'," + empId + ",true,'non_sales',now()) RETURNING id");
     const uuidMatch = insertResult.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
     profileId = uuidMatch ? uuidMatch[0] : insertResult.split('\n')[0].trim();
-    psqlQuery(`INSERT INTO user_roles (user_id,role) VALUES ('${profileId}','${e(finalRole)}')`);
+    psqlQuery("INSERT INTO user_roles (user_id,role) VALUES ('" + profileId + "','" + e(finalRole) + "')");
   }
-
   return { profile_id: profileId, role: finalRole, is_new_user: isNewUser };
 }
+
 
 app.use(express.json());
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization, Apikey, X-Client-Info, Prefer');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Expose-Headers', 'Content-Range, X-Total-Count');
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Max-Age', '86400');
+    return res.sendStatus(204);
+  }
   next();
 });
 
@@ -110,7 +115,7 @@ app.post('/api/auth/ldap', async (req, res) => {
     // Step 2: Upsert profile in local PostgreSQL
     console.log("Upserting to local PostgreSQL...");
     const finalRoleForUpsert = adProfile.adRole || "employee";
-    const { profile_id, role } = await upsertProfileLocal(adProfile, finalRoleForUpsert);
+    const { profile_id, role } = await upsertProfileLocal(adProfile, finalRoleForUpsert, !!adProfile.adRole);
     console.log("Profile upserted:", profile_id, "role:", role);
 
     // Step 3: Determine final role

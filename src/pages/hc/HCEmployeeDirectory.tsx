@@ -103,35 +103,32 @@ export default function HCEmployeeDirectory() {
   const { data: profiles = [], refetch } = useQuery({
     queryKey: ['hc-employee-directory'],
     queryFn: async () => {
+      // Fetch profiles without joins
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          full_name,
-          email,
-          employee_id,
-          sex,
-          department,
-          branch,
-          job_title,
-          date_joining,
-          employee_type,
-          academic_qualification,
-          marital_status,
-          is_active,
-          manager_id,
-          second_manager_id,
-          manager:profiles!profiles_manager_id_fkey(id, full_name, department),
-          second_manager:profiles!profiles_second_manager_id_fkey(id, full_name, department),
-          user_roles(role)
-        `)
+        .select(`id, full_name, email, employee_id, sex, department, branch, job_title, date_joining, employee_type, academic_qualification, marital_status, is_active, manager_id, second_manager_id`)
         .order('full_name');
-
       if (error) throw error;
+
+      // Fetch all profiles for manager lookup
+      const { data: allProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, department');
+      const profileMap: Record<string, any> = {};
+      (allProfiles || []).forEach((p: any) => { profileMap[p.id] = p; });
+
+      // Fetch user_roles separately
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+      const roleMap: Record<string, string> = {};
+      (roles || []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
+
       return ((data || []) as any[]).map((row) => ({
         ...row,
-        manager: Array.isArray(row.manager) ? row.manager[0] ?? null : row.manager ?? null,
-        second_manager: Array.isArray(row.second_manager) ? row.second_manager[0] ?? null : row.second_manager ?? null,
+        manager: row.manager_id ? profileMap[row.manager_id] || null : null,
+        second_manager: row.second_manager_id ? profileMap[row.second_manager_id] || null : null,
+        user_roles: [{ role: roleMap[row.id] || 'employee' }],
       })) as DirectoryProfile[];
     },
   });
@@ -153,25 +150,18 @@ export default function HCEmployeeDirectory() {
   const { data: managers = [] } = useQuery({
     queryKey: ['employee-directory-managers'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, department, user_roles!inner(role)')
-        .eq('user_roles.role', 'manager')
-        .order('full_name');
-
+      const { data: rolesData } = await supabase.from('user_roles').select('user_id, role');
+      const managerIds = new Set((rolesData || [])
+        .filter((r: any) => r.role === 'manager' || r.role === 'superadmin')
+        .map((r: any) => r.user_id));
+      const { data, error } = await supabase.from('profiles').select('id, full_name, department').order('full_name');
       if (error) throw error;
-
       const unique = new Map<string, ManagerRef>();
-      (data || []).forEach((manager: any) => {
+      (data || []).filter((p: any) => managerIds.has(p.id)).forEach((manager: any) => {
         if (!unique.has(manager.id)) {
-          unique.set(manager.id, {
-            id: manager.id,
-            full_name: manager.full_name,
-            department: manager.department,
-          });
+          unique.set(manager.id, { id: manager.id, full_name: manager.full_name, department: manager.department });
         }
       });
-
       return Array.from(unique.values());
     },
   });

@@ -51,7 +51,7 @@ export default function HCDashboard() {
   const { data: kpiEntries } = useQuery({
     queryKey: ['hc-all-kpi-entries'],
     queryFn: async () => {
-      const { data } = await supabase.from('kpi_entries').select('*, evaluation:evaluations(employee_id, status, cycle_id)') as any;
+      const { data } = await supabase.from('kpi_entries').select('*') as any;
       return data || [];
     },
   });
@@ -82,7 +82,7 @@ export default function HCDashboard() {
       const emp = profiles?.find((p: any) => p.id === e.employee_id);
       const dept = emp?.department || 'Unknown';
       if (!byDept[dept]) byDept[dept] = [];
-      byDept[dept].push(Number(e.final_score));
+      byDept[dept].push(parseFloat(e.final_score));
     });
     return Object.entries(byDept).map(([dept, scores]) => ({
       dept,
@@ -203,7 +203,7 @@ export default function HCDashboard() {
                           {days >= 5 ? '⚑ ' : ''}{days}d
                         </span>
                       </TableCell>
-                      <TableCell className="text-data text-sm">{e.final_score?.toFixed(1) ?? '—'}</TableCell>
+                      <TableCell className="text-data text-sm">{e.final_score != null ? Number(e.final_score).toFixed(1) : undefined ?? '—'}</TableCell>
                       <TableCell>
                         <button onClick={() => navigate(`/hc/evaluation/${e.id}`)} className="text-xs font-medium px-3 py-1.5 rounded-md" style={{ background: '#a855f7', color: 'white' }}>Validate</button>
                       </TableCell>
@@ -251,7 +251,7 @@ export default function HCDashboard() {
               <BarChart data={deptData} layout="vertical" margin={{ left: 60, right: 20 }}>
                 <XAxis type="number" domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                 <YAxis dataKey="dept" type="category" tick={{ fill: '#94a3b8', fontSize: 11 }} width={55} />
-                <Tooltip formatter={(v: any) => [v.toFixed(1), 'Avg Score']} contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, color: '#f1f5f9' }} />
+                <Tooltip formatter={(v: any) => [Number(v).toFixed(1), 'Avg Score']} contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, color: '#f1f5f9' }} />
                 <ReferenceLine x={66} stroke="#3b82f6" strokeDasharray="5 5" />
                 <Bar dataKey="avg" radius={[0, 4, 4, 0]}>
                   {deptData.map((d, i) => <Cell key={i} fill={getClassColor(d.avg)} />)}
@@ -289,7 +289,7 @@ export default function HCDashboard() {
                       const c = heatColor(val);
                       return (
                         <td key={cat} className="text-center px-4 py-2">
-                          <span className="inline-block rounded px-2 py-1 text-data text-xs font-medium" style={{ background: c.bg, color: c.text }}>{val.toFixed(1)}</span>
+                          <span className="inline-block rounded px-2 py-1 text-data text-xs font-medium" style={{ background: c.bg, color: c.text }}>{Number(val).toFixed(1)}</span>
                         </td>
                       );
                     })}

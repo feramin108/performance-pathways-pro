@@ -4,16 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, AlertCircle, Users, UserCheck, Shield } from 'lucide-react';
 
-const DEMO_ACCOUNTS = [
-  { label: 'Employee Demo', email: 'employee@bank.local', password: 'Demo@1234', className: 'bg-role-employee-bg text-role-employee-text hover:opacity-90' },
-  { label: 'Line Manager Demo', email: 'manager@bank.local', password: 'Demo@1234', className: 'bg-role-manager-bg text-role-manager-text hover:opacity-90' },
-  { label: 'HC Demo', email: 'hc@bank.local', password: 'Demo@1234', className: 'bg-role-hc-bg text-role-hc-text hover:opacity-90' },
-];
+// Demo accounts disabled in production
+const DEMO_ACCOUNTS: any[] = [];
 
 const ROLE_DASHBOARDS: Record<string, string> = {
   employee: '/employee/dashboard',
   manager: '/manager/dashboard',
   hc: '/hc/dashboard',
+  superadmin: '/hc/dashboard',
 };
 
 export default function LoginPage() {

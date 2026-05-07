@@ -48,8 +48,10 @@ export default function ManagerReview() {
   useEffect(() => {
     if (!id) return;
     (async () => {
-      const [{ data: ev }, { data: entries }, { data: logs }] = await Promise.all([
-        supabase.from('evaluations').select('*').eq('id', id).single(),
+      // Fetch evaluation - handle array response from local API
+      const { data: evData } = await supabase.from('evaluations').select('*').eq('id', id);
+      const ev = Array.isArray(evData) ? evData[0] : evData;
+      const [{ data: entries }, { data: logs }] = await Promise.all([
         supabase.from('kpi_entries').select('*').eq('evaluation_id', id).order('sort_order'),
         supabase.from('audit_logs').select('*').eq('evaluation_id', id).order('created_at', { ascending: false }),
       ]);
@@ -57,24 +59,33 @@ export default function ManagerReview() {
         setEvaluation(ev);
         setRequireSecondManager((ev as any).second_manager_required || false);
         setSecondManagerId((ev as any).second_manager_id || '');
-        const { data: emp } = await supabase.from('profiles').select('*').eq('id', (ev as any).employee_id).single();
+        const { data: empData } = await supabase.from('profiles').select('*').eq('id', (ev as any).employee_id);
+        const emp = Array.isArray(empData) ? empData[0] : empData;
         if (emp) setEmployee(emp);
       }
       if (entries) setKpiEntries(entries as any);
       if (logs) setAuditLogs(logs as any);
-      
-      // Load managers for second manager dropdown
       const { data: mgrProfiles } = await supabase.from('profiles').select('id, full_name, department').eq('is_active', true);
-      if (mgrProfiles) setManagers(mgrProfiles.filter((p: any) => p.id !== user?.id && p.id !== ev?.employee_id));
-      
+      const ldapProf = localStorage.getItem('spes_profile');
+      let currentUserId: string | null = null;
+      if (ldapProf) { try { currentUserId = JSON.parse(ldapProf).id; } catch {} }
+      if (!currentUserId) currentUserId = user?.id || null;
+      if (mgrProfiles) setManagers(mgrProfiles.filter((p: any) => p.id !== currentUserId && p.id !== (ev as any)?.employee_id));
       setLoading(false);
     })();
   }, [id, user]);
 
   const myRole = useMemo(() => {
-    if (!evaluation || !user) return 'unknown';
-    if (evaluation.second_manager_id === user.id && evaluation.status === 'second_manager_review') return 'second_manager';
-    if (evaluation.first_manager_id === user.id) return 'first_manager';
+    if (!evaluation) return 'unknown';
+    const ldapProfile = localStorage.getItem('spes_profile');
+    let currentUserId: string | null = user?.id || null;
+    if (!currentUserId && ldapProfile) { try { currentUserId = JSON.parse(ldapProfile).id; } catch {} }
+    // superadmin can act as first manager
+    const ldapRole = localStorage.getItem('spes_role');
+    if (ldapRole === 'superadmin') return 'first_manager';
+    if (!currentUserId) return 'unknown';
+    if ((evaluation as any).second_manager_id === currentUserId && (evaluation as any).status === 'second_manager_review') return 'second_manager';
+    if ((evaluation as any).first_manager_id === currentUserId) return 'first_manager';
     return 'unknown';
   }, [evaluation, user]);
 
@@ -118,7 +129,7 @@ export default function ManagerReview() {
       } as any).eq('id', id);
 
       await supabase.from('audit_logs').insert({
-        evaluation_id: id, actor_id: user.id, actor_role: 'manager',
+        evaluation_id: id, actor_id: (() => { try { return JSON.parse(localStorage.getItem('spes_profile') || '{}').id || user?.id; } catch { return user?.id; } })(), actor_role: 'manager',
         actor_username: profile?.full_name,
         action: `Revision requested by ${myRole === 'second_manager' ? 'second' : 'first'} line manager`,
         old_status: oldStatus, new_status: 'revision_requested',
@@ -140,7 +151,8 @@ export default function ManagerReview() {
   };
 
   const handleApprove = async () => {
-    if (!remarks.trim() || remarks.length < 20 || !id || !user) return;
+    const currentUserId = (() => { try { return JSON.parse(localStorage.getItem('spes_profile') || '{}').id || user?.id; } catch { return user?.id; } })();
+    if (!remarks.trim() || remarks.length < 20 || !id || !currentUserId) return;
     setProcessing(true);
     try {
       // Save manager ratings
@@ -197,7 +209,7 @@ export default function ManagerReview() {
       }
 
       await supabase.from('audit_logs').insert({
-        evaluation_id: id, actor_id: user.id, actor_role: 'manager',
+        evaluation_id: id, actor_id: (() => { try { return JSON.parse(localStorage.getItem('spes_profile') || '{}').id || user?.id; } catch { return user?.id; } })(), actor_role: 'manager',
         actor_username: profile?.full_name,
         action,
         old_status: oldStatus,

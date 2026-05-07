@@ -67,7 +67,7 @@ export default function HCPendingValidation() {
         }).eq('id', id);
         const ev = evaluations?.find((e: any) => e.id === id);
         await supabase.from('audit_logs').insert({
-          evaluation_id: id, actor_id: user?.id, actor_role: 'hc',
+          evaluation_id: id, actor_id: (() => { try { return JSON.parse(localStorage.getItem('spes_profile') || '{}').id || user?.id; } catch { return user?.id; } })(), actor_role: 'hc',
           actor_username: profile?.full_name, action: 'HC validation completed — validated',
           old_status: oldStatus, new_status: 'hc_validated',
         });
@@ -147,7 +147,7 @@ export default function HCPendingValidation() {
                       {days >= 5 ? '⚑ ' : ''}{days}d
                     </span>
                   </TableCell>
-                  <TableCell className="text-data text-sm">{e.final_score?.toFixed(1) ?? '—'}</TableCell>
+                  <TableCell className="text-data text-sm">{e.final_score != null ? Number(e.final_score).toFixed(1) : undefined ?? '—'}</TableCell>
                   <TableCell>{e.final_classification && <span className="text-xs font-medium">{e.final_classification}</span>}</TableCell>
                   <TableCell>
                     <button onClick={() => navigate(`/hc/evaluation/${e.id}`)} className="text-xs font-medium px-3 py-1.5 rounded-md" style={{ background: '#a855f7', color: 'white' }}>Validate</button>

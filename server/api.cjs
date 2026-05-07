@@ -5,6 +5,8 @@ const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
+
+
 const pool = new Pool({
   host: 'localhost',
   database: 'spes_db',
@@ -34,18 +36,33 @@ function parseQuery(tableName, query, user) {
   let offsetVal = null;
   let selectCols = '*';
 
+  // Debug
+  console.log('API query:', tableName, JSON.stringify(query));
   for (const [key, val] of Object.entries(query)) {
     if (key === 'select') {
-      // Handle select with joins e.g. *,profile:profiles!employee_id(*)
-      selectCols = val.replace(/[a-zA-Z_]+:[a-zA-Z_]+![a-zA-Z_]+\([^)]*\)/g, '').replace(/,,/g, ',').replace(/,$/, '').trim() || '*';
-      if (!selectCols) selectCols = '*';
+      // Strip join syntax: table!fkey(*), alias:table(*), user_roles(role) etc.
+      let sel = String(val);
+      sel = sel.replace(/[a-zA-Z_]+:[a-zA-Z_]+![a-zA-Z_]+\([^)]*\)/g, ''); // alias:table!fkey(cols)
+      sel = sel.replace(/[a-zA-Z_]+![a-zA-Z_]+\([^)]*\)/g, '');             // table!fkey(cols)
+      sel = sel.replace(/[a-zA-Z_]+\([^)]*\)/g, '');                         // table(cols)
+      sel = sel.replace(/,,+/g, ',').replace(/^,|,$/g, '').trim();
+      selectCols = sel || '*';
       continue;
     }
     if (key === 'order') {
-      const parts = val.split(',');
+      // Handle both 'col.asc' and 'col.desc' formats
+      const parts = String(val).split(',');
       parts.forEach(p => {
-        const [col, dir] = p.split('.');
-        if (col) orderParts.push(`${col} ${dir === 'desc' ? 'DESC' : 'ASC'}`);
+        p = p.trim();
+        if (!p || p.includes('{')) return; // skip object syntax
+        const dotIdx = p.lastIndexOf('.');
+        if (dotIdx > 0) {
+          const col = p.substring(0, dotIdx).trim();
+          const dir = p.substring(dotIdx + 1).trim();
+          if (col) orderParts.push(col + ' ' + (dir === 'desc' ? 'DESC' : 'ASC'));
+        } else if (p) {
+          orderParts.push(p + ' ASC');
+        }
       });
       continue;
     }
@@ -137,6 +154,20 @@ TABLES.forEach(tableName => {
     try {
       const sql = parseQuery(tableName, req.query, user);
       const result = await pool.query(sql);
+      // Convert numeric string fields to numbers
+      const NUMERIC_FIELDS = ['final_score','a1_score_on_100','a1_weighted','a2_score_on_100',
+        'a2_weighted','sec_score_on_100','sec_weighted','gen_score_on_100','gen_weighted',
+        'rating_gap','employee_rating','manager_rating','weight_nonsales','weight_sales',
+        'sort_order','revision_count','target_rating'];
+      result.rows = result.rows.map(row => {
+        const newRow = {...row};
+        NUMERIC_FIELDS.forEach(f => {
+          if (newRow[f] !== null && newRow[f] !== undefined && typeof newRow[f] === 'string') {
+            newRow[f] = Number(newRow[f]);
+          }
+        });
+        return newRow;
+      });
       // Handle Prefer: return=representation single
       const prefer = req.headers['prefer'] || '';
       if (prefer.includes('count=exact')) {

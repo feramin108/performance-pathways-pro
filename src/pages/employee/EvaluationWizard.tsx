@@ -234,11 +234,12 @@ export default function EvaluationWizard() {
   };
 
   const saveDraft = async (silent = false) => {
-    if (!user) return;
+    const actorId = user?.id || profile?.id;
+    if (!actorId) return;
     setSaving(true);
     try {
       const evalData: any = {
-        employee_id: user.id,
+        employee_id: actorId,
         cycle_id: formData.cycle_id || null,
         employee_type: formData.employee_type,
         status: 'draft',
@@ -313,7 +314,8 @@ export default function EvaluationWizard() {
   }, [kpisByCategory]);
 
   const handleSubmit = async () => {
-    if (!validation.allPassed || !user || !evaluationId) return;
+    if (!validation.allPassed || !evaluationId) return;
+    const actorId = user?.id || profile?.id;
     setSubmitting(true);
     try {
       const oldStatus = (await getEvaluationStatus(evaluationId)) || 'draft';
@@ -348,7 +350,7 @@ export default function EvaluationWizard() {
 
       await supabase.from('audit_logs').insert({
         evaluation_id: evaluationId,
-        actor_id: user.id,
+        actor_id: actorId,
         actor_role: 'employee',
         actor_username: profile?.username || profile?.full_name,
         action: 'Evaluation submitted by employee',

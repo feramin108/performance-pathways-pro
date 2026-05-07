@@ -6,12 +6,21 @@ export function useMyEvaluations() {
   return useQuery({
     queryKey: ['my-evaluations'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      // Support both Supabase auth and LDAP auth
+      let userId: string | null = null;
+      const ldapProfile = localStorage.getItem('spes_profile');
+      if (ldapProfile) {
+        try { userId = JSON.parse(ldapProfile).id; } catch {}
+      }
+      if (!userId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        userId = user?.id || null;
+      }
+      if (!userId) return [];
       const { data, error } = await supabase
         .from('evaluations')
         .select('*')
-        .eq('employee_id', user.id)
+        .eq('employee_id', userId)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
@@ -24,12 +33,37 @@ export function useManagerEvaluations() {
   return useQuery({
     queryKey: ['manager-evaluations'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get manager ID from LDAP profile or Supabase
+      let managerId: string | null = null;
+      const ldapProfile = localStorage.getItem('spes_profile');
+      if (ldapProfile) {
+        try { managerId = JSON.parse(ldapProfile).id; } catch {}
+      }
+      if (!managerId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        managerId = user?.id || null;
+      }
+
+      // Fetch evaluations where this user is first or second manager
+      const { data: evals, error } = await supabase
         .from('evaluations')
-        .select('*, employee:profiles!evaluations_employee_id_fkey(id, full_name, department, branch, employee_id, job_title, function_role)')
+        .select('*')
         .order('created_at', { ascending: false }) as any;
       if (error) throw error;
-      return data || [];
+
+      // Fetch all profiles to join manually
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, department, branch, employee_id, job_title, function_role');
+
+      const profileMap: Record<string, any> = {};
+      (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
+
+      // Attach employee profile to each evaluation
+      return (evals || []).map((e: any) => ({
+        ...e,
+        employee: profileMap[e.employee_id] || null,
+      }));
     },
   });
 }
